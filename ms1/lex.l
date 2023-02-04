@@ -106,6 +106,9 @@ void MyFlexLexer::myUnput(char * text, int si, int ei) {
   fprintf(stderr, "myUnput range is longer than input text!");
   exit(EXIT_FAILURE);
 }
+
+const int MAX_WARNINGS = 11;
+int numWarnings = 0;
 %}
 
 alph [a-zA-Z]
@@ -115,21 +118,26 @@ alphNum [a-zA-Z0-9]
 
 %%
 [ \t]+     {}
+\n         { ++myLineNo; }
+>          { return MyFlexLexer::T_GT; }
+=          { return MyFlexLexer::T_EQ; }
+>=         { return MyFlexLexer::T_GE; }
+
 
 \"         { BEGIN(STRING); yymore(); }
-
 <STRING>\" { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
 <STRING>\n { fprintf(stderr, "lexer error %s", yytext); BEGIN(INITIAL); }
 <STRING>.  { yymore(); }
 
 
-\n         { ++myLineNo; }
-
->          { return MyFlexLexer::T_GT; }
-=          { return MyFlexLexer::T_EQ; }
->=         { return MyFlexLexer::T_GE; }
-
 {alph}({alphNum}*)  { return MyFlexLexer::T_ID; }
 
-.          { std::cerr << "bad token `" << getAttribute() << "`" << " at " << myLineNo << "." << std::endl; exit(EXIT_FAILURE); }
+.          {
+    if (++numWarnings < MAX_WARNINGS)  {
+      std::cerr << "warning: skipping unknown character `" << getAttribute() << "`" << " at or near line " << myLineNo << std::endl; 
+    } else {
+      std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
+      exit(EXIT_FAILURE);
+    } 
+  }
 %%
