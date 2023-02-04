@@ -11,7 +11,7 @@ public:
   MyFlexLexer(std::istream &istream, std::ostream &ostream);
 
   int yylex();
-
+  
   std::string getAttribute();
 
   enum Token : int
@@ -56,4 +56,6 @@ public:
   };
 
   static char const *tokenToString(Token const);
+  void myUnput(char * text);
+  void myUnput(char * text, int si, int ei);
 };

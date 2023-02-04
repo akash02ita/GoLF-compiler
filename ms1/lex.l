@@ -85,6 +85,27 @@ char const* MyFlexLexer::tokenToString(Token const tok) {
       }
     }
 
+MyFlexLexer::Token lastToken = MyFlexLexer::T_S; // default last token value: semicolon should not affect program
+
+void MyFlexLexer::myUnput(char * text) {
+  int i;
+  /* Copy yytext because unput() trashes yytext */
+  char *yycopy = strdup( text );
+  for ( i = yyleng - 1; i >= 0; --i )
+      unput( yycopy[i] );
+  free( yycopy );
+}
+
+void MyFlexLexer::myUnput(char * text, int si, int ei) {
+  if ((ei-si) <= (int) strlen(text)) {
+    char* subtext = (char*) malloc((ei-si+1) * sizeof(char));
+    strncpy(subtext, text + si, ei - si);
+    myUnput(subtext);
+    return;
+  }
+  fprintf(stderr, "myUnput range is longer than input text!");
+  exit(EXIT_FAILURE);
+}
 %}
 
 alph [a-zA-Z]
