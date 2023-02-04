@@ -114,23 +114,64 @@ int numWarnings = 0;
 alph [a-zA-Z]
 alphNum [a-zA-Z0-9]
 
+non_ascii_char [^\x00-\x7F]
+ascii_char .
+ascii_char2 . [^{non_ascii_char}\n]
+
 %x STRING
 
 %%
 [ \t]+     {}
 \n         { ++myLineNo; }
->          { return MyFlexLexer::T_GT; }
-=          { return MyFlexLexer::T_EQ; }
->=         { return MyFlexLexer::T_GE; }
 
+"+"        { return MyFlexLexer::T_ADD; }
+"-"        { return MyFlexLexer::T_SUB; }
+"*"        { return MyFlexLexer::T_MULT; }
+"/"        { return MyFlexLexer::T_DIV; }
+"%"        { return MyFlexLexer::T_MOD; }
+
+"&&"        { return MyFlexLexer::T_AND; }
+"||"        { return MyFlexLexer::T_OR; }
+
+"=="        { return MyFlexLexer::T_EE; }
+"<"        { return MyFlexLexer::T_LT; }
+">"        { return MyFlexLexer::T_GT; }
+"="        { return MyFlexLexer::T_EQ; }
+"!"        { return MyFlexLexer::T_EMARK; }
+
+"!="        { return MyFlexLexer::T_NE; }
+"<="        { return MyFlexLexer::T_LE; }
+">="        { return MyFlexLexer::T_GE; }
+
+"("        { return MyFlexLexer::T_LP; }
+")"        { return MyFlexLexer::T_RP; }
+"{"        { return MyFlexLexer::T_LC; }
+"}"        { return MyFlexLexer::T_RC; }
+","        { return MyFlexLexer::T_C; }
+";"        { return MyFlexLexer::T_S; }
+
+break      { return MyFlexLexer::T_BREAK; }
+else      { return MyFlexLexer::T_ELSE; }
+for      { return MyFlexLexer::T_FOR; }
+func      { return MyFlexLexer::T_FUNC; }
+if      { return MyFlexLexer::T_IF; }
+return      { return MyFlexLexer::T_RET; }
+var      { return MyFlexLexer::T_VAR; }
+
+"//"{ascii_char}*       {} // skip comments
+
+{alph}({alphNum}*)  { return MyFlexLexer::T_ID; } // identifier
+[0-9][0-9]*         {return MyFlexLexer::T_INT; }   // int literal
 
 \"         { BEGIN(STRING); yymore(); }
 <STRING>\" { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
 <STRING>\n { fprintf(stderr, "lexer error %s", yytext); BEGIN(INITIAL); }
-<STRING>.  { yymore(); }
+<STRING>\b|\f|\r|\t|\\|\\\"  { yymore(); }
+<STRING>{alphNum}|\' {yymore();}
+<STRING>.  { fprintf(stderr, "bad string error at or near line %d\n", myLineNo); exit(EXIT_FAILURE); }
 
 
-{alph}({alphNum}*)  { return MyFlexLexer::T_ID; }
+
 
 .          {
     if (++numWarnings < MAX_WARNINGS)  {
