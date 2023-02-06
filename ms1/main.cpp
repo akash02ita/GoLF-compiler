@@ -29,6 +29,9 @@ int main(int argc, char **argv)
         << " at line "
         << lexer.myLineNo
         << "\n";
+
+    // update last token
+    lexer.lastToken = (MyFlexLexer::Token) tk;
   }
   return EXIT_SUCCESS;
 }

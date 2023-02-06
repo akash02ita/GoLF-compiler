@@ -85,7 +85,6 @@ char const* MyFlexLexer::tokenToString(Token const tok) {
       }
     }
 
-MyFlexLexer::Token lastToken = MyFlexLexer::T_S; // default last token value: semicolon should not affect program
 
 void MyFlexLexer::myUnput(char * text) {
   int i;
