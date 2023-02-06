@@ -55,6 +55,7 @@ public:
     T_STRING
   };
 
+  Token lastToken = T_S; // default last token value: semicolon should not affect program
   static char const *tokenToString(Token const);
   void myUnput(char * text);
   void myUnput(char * text, int si, int ei);
