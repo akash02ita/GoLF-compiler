@@ -8,15 +8,21 @@
 
 int main(int argc, char **argv)
 {
-  std::ifstream file{argv[1]};
-
-  if (!file.is_open())
+  std::istream *input = &std::cin;
+  std::ifstream file;
+  if (argc == 2)
   {
-    std::cerr << "failed opening file\n";
-    return EXIT_FAILURE;
+    file.open(argv[1]);
+    if (!file.is_open())
+    {
+      std::cerr << "failed opening file\n";
+      return EXIT_FAILURE;
+    }
+
+    input = &file;
   }
 
-  class MyFlexLexer lexer = MyFlexLexer{file, std::cout};
+  class MyFlexLexer lexer = MyFlexLexer{*input, std::cout};
 
   int tk;
   while ((tk = lexer.yylex()) != 0)
@@ -31,7 +37,8 @@ int main(int argc, char **argv)
         << "\n";
 
     // update last token
-    lexer.lastToken = (MyFlexLexer::Token) tk;
+    std::cout << "last token was " << lexer.lastToken << std::endl;
+    lexer.lastToken = (MyFlexLexer::Token)tk;
   }
   return EXIT_SUCCESS;
 }
