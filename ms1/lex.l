@@ -159,7 +159,7 @@ var      { return MyFlexLexer::T_VAR; }
 
 "//"{ascii_char}*       {} // skip comments: TODO: how to handles comments with 8-bit char?
 
-{alph}({alphNum}*)  { return MyFlexLexer::T_ID; } // identifier
+({alph}|_)(({alphNum}|_)*)  { return MyFlexLexer::T_ID; } // identifier
 [0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
 
 
