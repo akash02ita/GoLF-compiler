@@ -1,7 +1,7 @@
 %option noyywrap
 %option c++
 %option yyclass="MyFlexLexer"
-
+%option yylineno
 %{
 #include"lex.h"
 #include<cstdlib>
@@ -75,7 +75,7 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
 
 }
 bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
-  std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
+  // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
   if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != MyFlexLexer::T_S;
   else { // condition = \n or EOF
@@ -92,11 +92,14 @@ bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string inp
   }
 
   if (flag && (condition == "\n" || condition == "}")) {
-    std::cout << "\t\tDEBUG: handle implicit unputting {" << input << "} " << std::endl;
+    // std::cout << "\t\tDEBUG: handle implicit unputting {" << input << "} " << std::endl;
     myUnput(input.c_str());
+    // myLine-- is not always right, unless myLine -= occurences of \n in input
+    myLineNo = yylineno; // bug fix: must restore linenumber.
+    
   }
 
-  std::cout << "\t\tDEBUG: handle implicit returning flag: " << flag << std::endl;
+  // std::cout << "\t\tDEBUG: handle implicit returning flag: " << flag << std::endl;
   return flag;
 }
 
