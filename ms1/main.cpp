@@ -8,6 +8,7 @@
 
 int main(int argc, char **argv)
 {
+  if (argc != 2) return 0; // if this line is uncommented, then stdin is not allowed
   std::istream *input = &std::cin;
   std::ifstream file;
   if (argc == 2)
@@ -37,7 +38,7 @@ int main(int argc, char **argv)
         << "\n";
 
     // update last token
-    std::cout << "last token was " << lexer.lastToken << std::endl;
+    std::cout << "\t\tlast token was " << MyFlexLexer::tokenToString(lexer.lastToken) << std::endl;
     lexer.lastToken = (MyFlexLexer::Token)tk;
   }
   return EXIT_SUCCESS;
