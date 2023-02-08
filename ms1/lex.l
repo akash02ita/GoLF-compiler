@@ -128,14 +128,17 @@ var      { return MyFlexLexer::T_VAR; }
 "//"{ascii_char}*       {} // skip comments
 
 {alph}({alphNum}*)  { return MyFlexLexer::T_ID; } // identifier
-[0-9][0-9]*         {return MyFlexLexer::T_INT; }   // int literal
+[0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
 
-\"         { BEGIN(STRING); yymore(); }
-<STRING>\" { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
-<STRING>\n { fprintf(stderr, "lexer error %s", yytext); BEGIN(INITIAL); }
-<STRING>\b|\f|\r|\t|\\|\\\"  { yymore(); }
-<STRING>{alphNum}|\' {yymore();}
-<STRING>.  { fprintf(stderr, "bad string error at or near line %d\n", myLineNo); exit(EXIT_FAILURE); }
+
+\"                                    { BEGIN(STRING); yymore(); }
+<STRING>\"                            { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
+<STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
+<STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING><<EOF>>                       {std::cerr << "error: string [" << yytext << "] terminated by EOF at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE);} // TODO: yytext is empty on EOF
+<STRING>\\.                           { std::cerr << "error: bad string escape '" << yytext[yyleng-1] << "' at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>.                             { yymore(); } // everything else is valid, including _?!''
 
 
 
