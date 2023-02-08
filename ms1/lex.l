@@ -54,7 +54,7 @@ char const* MyFlexLexer::tokenToString(Token const tok) {
     }
 
 
-void MyFlexLexer::myUnput(char * text) {
+void MyFlexLexer::myUnput(const char * text) {
   int i;
   /* Copy yytext because unput() trashes yytext */
   char *yycopy = strdup( text );
@@ -63,7 +63,7 @@ void MyFlexLexer::myUnput(char * text) {
   free( yycopy );
 }
 
-void MyFlexLexer::myUnput(char * text, int si, int ei) {
+void MyFlexLexer::myUnput(const char * text, int si, int ei) {
   if ((ei-si) <= (int) strlen(text)) {
     char* subtext = (char*) malloc((ei-si+1) * sizeof(char));
     strncpy(subtext, text + si, ei - si);
@@ -72,6 +72,32 @@ void MyFlexLexer::myUnput(char * text, int si, int ei) {
   }
   fprintf(stderr, "myUnput range is longer than input text!");
   exit(EXIT_FAILURE);
+
+}
+bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
+  std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
+  bool flag = false;
+  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != MyFlexLexer::T_S;
+  else { // condition = \n or EOF
+    switch(MyFlexLexer::lastToken) {
+      case T_ID: flag = true;
+      case T_INT: flag = true;
+      case T_STRING: flag = true;
+      case T_BREAK: flag = true;
+      case T_RET: flag = true;
+      case T_RP: flag = true;
+      case T_RC: flag = true;
+      default: break;
+    }
+  }
+
+  if (flag && (condition == "\n" || condition == "}")) {
+    std::cout << "\t\tDEBUG: handle implicit unputting {" << input << "} " << std::endl;
+    myUnput(input.c_str());
+  }
+
+  std::cout << "\t\tDEBUG: handle implicit returning flag: " << flag << std::endl;
+  return flag;
 }
 
 const int MAX_WARNINGS = 11;
@@ -83,13 +109,13 @@ alphNum [a-zA-Z0-9]
 
 non_ascii_char [^\x00-\x7F]
 ascii_char .
-ascii_char2 . [^{non_ascii_char}\n]
 
 %x STRING
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; }
+\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return MyFlexLexer::T_S;}
+<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return MyFlexLexer::T_S; return 0; }
 
 "+"        { return MyFlexLexer::T_ADD; }
 "-"        { return MyFlexLexer::T_SUB; }
@@ -113,7 +139,10 @@ ascii_char2 . [^{non_ascii_char}\n]
 "("        { return MyFlexLexer::T_LP; }
 ")"        { return MyFlexLexer::T_RP; }
 "{"        { return MyFlexLexer::T_LC; }
-"}"        { return MyFlexLexer::T_RC; }
+"}"        { 
+            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return MyFlexLexer::T_S;
+            return MyFlexLexer::T_RC; 
+           }
 ","        { return MyFlexLexer::T_C; }
 ";"        { return MyFlexLexer::T_S; }
 
@@ -125,7 +154,7 @@ if      { return MyFlexLexer::T_IF; }
 return      { return MyFlexLexer::T_RET; }
 var      { return MyFlexLexer::T_VAR; }
 
-"//"{ascii_char}*       {} // skip comments
+"//"{ascii_char}*       {} // skip comments: TODO: how to handles comments with 8-bit char?
 
 {alph}({alphNum}*)  { return MyFlexLexer::T_ID; } // identifier
 [0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
