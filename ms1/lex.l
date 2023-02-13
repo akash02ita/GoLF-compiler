@@ -5,6 +5,8 @@
 %{
 #include"lex.h"
 #include<cstdlib>
+#include<ctype.h>
+#include<string.h>
 
 
 MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
@@ -105,15 +107,55 @@ bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string inp
 
 const int MAX_WARNINGS = 11;
 int numWarnings = 0;
+
+std::string filterText(const char * text, int mylen) {
+  std::string r = "";
+  for (int i = 0; i < mylen; i++) {
+    char c = text[i];
+    // idea source: https://stackoverflow.com/questions/14647979/is-it-possible-to-print-non-printing-characters-with-a-c-specifier
+    if (isprint(c)) r += c;
+    else {
+      switch(c) {
+        case '\n': r += "\\n"; break;
+        case '\v': r += "\\v"; break;
+        case '\t': r += "\\t"; break;
+        case '\f': r += "\\f"; break;
+        case '\r': r += "\\r"; break;
+        case '\0': r += "NUL"; break;
+        default:   {char * temp; asprintf(&temp, "\\x%02x", c); r += temp; free(temp); break;}
+      }
+    }
+  }
+
+  return r;
+}
+void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
+  if (++numWarnings < MAX_WARNINGS)  {
+    std::cerr << "warning: skipping unknown character `" << filterText(text, mylen) << "`" << " at or near line " << myLineNo << std::endl;
+  } else {
+    std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+void MyFlexLexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
+void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
+  if (++numWarnings < MAX_WARNINGS)  {
+    std::cerr << "warning: skipping " << filterText(text, mylen) << " character" << " at or near line " << myLineNo << std::endl;
+  } else {
+    std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
 %}
 
 alph [a-zA-Z]
 alphNum [a-zA-Z0-9]
 
 non_ascii_char [^\x00-\x7F]
-ascii_char .
 
 %x STRING
+%x COMMENT
 
 %%
 [ \t]+     {}
@@ -157,7 +199,10 @@ if      { return MyFlexLexer::T_IF; }
 return      { return MyFlexLexer::T_RET; }
 var      { return MyFlexLexer::T_VAR; }
 
-"//"{ascii_char}*       {} // skip comments: TODO: how to handles comments with 8-bit char?
+"//"                                  { BEGIN(COMMENT); }
+<COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
+<COMMENT>.                            { }
 
 ({alph}|_)(({alphNum}|_)*)  { return MyFlexLexer::T_ID; } // identifier
 [0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
@@ -173,14 +218,6 @@ var      { return MyFlexLexer::T_VAR; }
 <STRING>.                             { yymore(); } // everything else is valid, including _?!''
 
 
-
-
-.          {
-    if (++numWarnings < MAX_WARNINGS)  {
-      std::cerr << "warning: skipping unknown character `" << getAttribute() << "`" << " at or near line " << myLineNo << std::endl; 
-    } else {
-      std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
-      exit(EXIT_FAILURE);
-    } 
-  }
+\0         { handleWarningSkip("NUL"); }
+.          { handleWarningUnknown(yytext, yyleng); }
 %%
