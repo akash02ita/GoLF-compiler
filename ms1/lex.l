@@ -217,7 +217,9 @@ var      { return MyFlexLexer::T_VAR; }
 <STRING>\\.                           { std::cerr << "error: bad string escape '" << yytext[yyleng-1] << "' at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <STRING>.                             { yymore(); } // everything else is valid, including _?!''
 
-
+"&"          { std::cerr << "error: bitwise AND not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+"|"          { std::cerr << "error: bitwise OR not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 \0         { handleWarningSkip("NUL"); }
+{non_ascii_char} { handleWarningSkip("non-ASCII input"); }
 .          { handleWarningUnknown(yytext, yyleng); }
 %%
