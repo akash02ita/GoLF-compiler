@@ -95,7 +95,13 @@ var      { return T_VAR; }
 
 /* All functions are coded here, with prototypes already defined. This avoids many lex.yy.c compiling errrors with gcc */
 const char * getAttribute() {
-    return yytext;
+    // printf("\n\t\tULTRADEBUG strlen(yytext):%d and yyleng:%d \n", (int) strlen(yytext), (int) yyleng);
+    // instaed of returning yytext return first yyleng characters of yytext.
+    // BUGFIX: this ensures that when using unput, extra chars are not printed. probably unput modifies yyleng but not yytext properly.
+    char * text = malloc(yyleng * sizeof(char));
+    strncpy(text, yytext, yyleng);
+    text[yyleng] = '\0';
+    return text;
 }
 
 char const* tokenToString(yytoken_kind_t const tok) {
@@ -161,10 +167,10 @@ void myUnput2(const char * text, int si, int ei) {
 bool handleImplicitSemicolon(const char * condition, const char * input) {
   const char * STR_EMPTY = "";
   if (input == NULL) {
+    // fprintf(stdout, "\t\tDEBUG: handle INPUT IS empty\n");
     input = STR_EMPTY;
   }
-  // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
-  fprintf(stdout, "\t\tDEBUG: handleimplicit called on condition {%s}\n", condition);
+  // fprintf(stdout, "\t\tDEBUG: handleimplicit called on condition {%s}\n", condition);
   bool flag = false;
   if (strcmp(condition, "}") == 0) flag = lastToken != 0 && lastToken != T_S;
   else { // condition = \n or EOF
@@ -181,14 +187,12 @@ bool handleImplicitSemicolon(const char * condition, const char * input) {
   }
 
   if (flag && (strcmp(condition,"\n") == 0 || strcmp(condition,"}") == 0)) {
-    // std::cout << "\t\tDEBUG: handle implicit unputting {" << input << "} " << std::endl;
-    fprintf(stdout, "\t\tDEBUG: handle implicit unputting {%s}", input);
+    // fprintf(stdout, "\t\tDEBUG: handle implicit unputting {%s}\n", input);
     myUnput(input);
     
   }
 
-  // std::cout << "\t\tDEBUG: handle implicit returning flag: " << flag << std::endl;
-  fprintf(stdout, "\t\tDEBUG: handle implicing returning flag: %d\n", flag);
+  // fprintf(stdout, "\t\tDEBUG: handle implicing returning flag: %d\n", flag);
   return flag;
 }
 
