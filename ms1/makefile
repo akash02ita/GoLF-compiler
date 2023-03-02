@@ -5,13 +5,13 @@ CXXFLAGS=-Wall
 
 golf: main.o lex.yy.o
 	$(CXX) $(CXXFLAGS) -o golf main.o lex.yy.o && cp golf tests/golf
-main.o: main.cpp lex.h
+main.o: main.cpp lex.h global.h
 	$(CXX) $(CXXFLAGS) -c main.cpp
 
 lex.yy.o: lex.yy.cc
 	$(CXX) $(CXXFLAGS) -c lex.yy.cc
 
-lex.yy.cc: lex.l lex.h
+lex.yy.cc: lex.l lex.h global.h
 	flex lex.l
 
 clean:
