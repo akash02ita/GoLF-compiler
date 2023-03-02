@@ -15,12 +15,11 @@ Suppose
     // in bison it would be
     A -> %empty | E
 
-// other thing
+// other thing to mention
     // while building grammar
         // each endpoint is best to terminate with different symbol
             // where the symbol is terminal
-        // same %empty in all endpoints or same symbol may lead to 
-            // ambiguity even if grammar is non-ambiguous 
+        // same %empty in all endpoints or same symbol may lead to ambiguity even if grammar is non-ambiguous 
 
 EVERY ONCE IN A WIHLE KEEP CHECKING WITH `bison -Wcounterexamples parse.y`
 if there is a shift reduce error that can be solved reight away instead of starting at completed code full of shift/reduce or reduce/reduce errors
@@ -74,17 +73,46 @@ SourceFile	: %empty {fprintf(stdout, "empty sourcefile\n");}
 			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
 
 TopLevelDecl : Declaration | FunctionDecl
- Declaration : VarDecl
- VarDecl : T_VAR VarSpec 
- VarSpec : identifier type
-  identifier : "a"
-  type : "b"
+Declaration : VarDecl
+VarDecl : T_VAR VarSpec 
+VarSpec : identifier type
+
 
 FunctionDecl : T_FUNC FunctionName Signature FunctionBody
- FunctionName : identifier
- Signature : "c"
- FunctionBody : Block
+FunctionName : identifier
+FunctionBody : Block
 
+Block: "{" StatementList "}"
+StatementList : %empty
+              | StatementList Statement T_S
+Statement : Declaration
+          | SimpleStmt
+          | ReturnStmt 
+          | BreakStmt 
+          | Block  
+          | IfStmt   
+          | ForStmt
+          
+Signature : Parameters | Parameters Result
+Result : Type
+Type : TypeName
+TypeName : identifier
+// Parameters : "(" [ ParameterList [ T_C ] ] ")"
+// think of [a [b]] -> e|a[b] -> e|a|ab where e=empty
+Parameters : "(" Parameters1 ")"
+Parameters1 : %empty 
+              | ParameterList
+              | ParameterList T_C
+ParameterList : "f"
+
+SimpleStmt: "c"
+ReturnStmt: "d"
+BreakStmt: "e"
+IfStmt: "g"
+ForStmt: "h"
+
+identifier : "a"
+type : "b"
 %%
 
 void yyerror(char* err) {
