@@ -7,6 +7,7 @@
 #include<cstdlib>
 #include<ctype.h>
 #include<string.h>
+#include"global.h"
 
 
 MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
@@ -15,10 +16,11 @@ MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
 }
 
 std::string MyFlexLexer::getAttribute() {
+  // something yyleng < strlen(text) when using unput. Thus, this way is better
   return std::string(YYText(), YYLeng());
 }
 
-char const* MyFlexLexer::tokenToString(Token const tok) {
+char const* MyFlexLexer::tokenToString(G_enum_tok_t const tok) {
       switch (tok) {
         case T_BREAK:     return "T_BREAK";
         case T_ELSE:      return "T_ELSE";
@@ -79,7 +81,7 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
 bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
   // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
-  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != MyFlexLexer::T_S;
+  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != T_S;
   else { // condition = \n or EOF
     switch(MyFlexLexer::lastToken) {
       case T_ID: flag = true;
@@ -159,57 +161,57 @@ non_ascii_char [^\x00-\x7F]
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return MyFlexLexer::T_S;}
-<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return MyFlexLexer::T_S; return 0; }
+\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return T_S;}
+<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return T_S; return 0; }
 
-"+"        { return MyFlexLexer::T_ADD; }
-"-"        { return MyFlexLexer::T_SUB; }
-"*"        { return MyFlexLexer::T_MULT; }
-"/"        { return MyFlexLexer::T_DIV; }
-"%"        { return MyFlexLexer::T_MOD; }
+"+"        { return T_ADD; }
+"-"        { return T_SUB; }
+"*"        { return T_MULT; }
+"/"        { return T_DIV; }
+"%"        { return T_MOD; }
 
-"&&"        { return MyFlexLexer::T_AND; }
-"||"        { return MyFlexLexer::T_OR; }
+"&&"        { return T_AND; }
+"||"        { return T_OR; }
 
-"=="        { return MyFlexLexer::T_EE; }
-"<"        { return MyFlexLexer::T_LT; }
-">"        { return MyFlexLexer::T_GT; }
-"="        { return MyFlexLexer::T_EQ; }
-"!"        { return MyFlexLexer::T_EMARK; }
+"=="        { return T_EE; }
+"<"        { return T_LT; }
+">"        { return T_GT; }
+"="        { return T_EQ; }
+"!"        { return T_EMARK; }
 
-"!="        { return MyFlexLexer::T_NE; }
-"<="        { return MyFlexLexer::T_LE; }
-">="        { return MyFlexLexer::T_GE; }
+"!="        { return T_NE; }
+"<="        { return T_LE; }
+">="        { return T_GE; }
 
-"("        { return MyFlexLexer::T_LP; }
-")"        { return MyFlexLexer::T_RP; }
-"{"        { return MyFlexLexer::T_LC; }
+"("        { return T_LP; }
+")"        { return T_RP; }
+"{"        { return T_LC; }
 "}"        { 
-            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return MyFlexLexer::T_S;
-            return MyFlexLexer::T_RC; 
+            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return T_S;
+            return T_RC; 
            }
-","        { return MyFlexLexer::T_C; }
-";"        { return MyFlexLexer::T_S; }
+","        { return T_C; }
+";"        { return T_S; }
 
-break      { return MyFlexLexer::T_BREAK; }
-else      { return MyFlexLexer::T_ELSE; }
-for      { return MyFlexLexer::T_FOR; }
-func      { return MyFlexLexer::T_FUNC; }
-if      { return MyFlexLexer::T_IF; }
-return      { return MyFlexLexer::T_RET; }
-var      { return MyFlexLexer::T_VAR; }
+break      { return T_BREAK; }
+else      { return T_ELSE; }
+for      { return T_FOR; }
+func      { return T_FUNC; }
+if      { return T_IF; }
+return      { return T_RET; }
+var      { return T_VAR; }
 
 "//"                                  { BEGIN(COMMENT); }
 <COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
 <COMMENT>.                            { }
 
-({alph}|_)(({alphNum}|_)*)  { return MyFlexLexer::T_ID; } // identifier
-[0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
+({alph}|_)(({alphNum}|_)*)  { return T_ID; } // identifier
+[0-9][0-9]*         { return T_INT; }   // int literal
 
 
 \"                                    { BEGIN(STRING); yymore(); }
-<STRING>\"                            { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
+<STRING>\"                            { BEGIN(INITIAL); return T_STRING; }
 <STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
 <STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
