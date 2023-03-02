@@ -11,6 +11,9 @@
 
 #include "lex.h"
 yytoken_kind_t lastToken = (yytoken_kind_t) 0;
+// last token must be updated inside lexer only, since parser won't be doing that
+yytoken_kind_t updateLastToken(yytoken_kind_t const tok);
+
 const int MAX_WARNINGS = 11;
 int numWarnings = 0;
 
@@ -27,57 +30,57 @@ non_ascii_char [^\x00-\x7F]
 
 %%
 [ \t]+     {}
-\n         {if (handleImplicitSemicolon("\n", yytext)) return T_S;}
-<INITIAL><<EOF>>    { if (handleImplicitSemicolon("EOF", "")) return T_S; return 0; }
+\n         {if (handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
+<INITIAL><<EOF>>    { if (handleImplicitSemicolon("EOF", "")) return updateLastToken(T_S); return 0; }
 
-"+"        { return T_ADD; }
-"-"        { return T_SUB; }
-"*"        { return T_MULT; }
-"/"        { return T_DIV; }
-"%"        { return T_MOD; }
+"+"        { return updateLastToken(T_ADD); }
+"-"        { return updateLastToken(T_SUB); }
+"*"        { return updateLastToken(T_MULT); }
+"/"        { return updateLastToken(T_DIV); }
+"%"        { return updateLastToken(T_MOD); }
 
-"&&"        { return T_AND; }
-"||"        { return T_OR; }
+"&&"        { return updateLastToken(T_AND); }
+"||"        { return updateLastToken(T_OR); }
 
-"=="        { return T_EE; }
-"<"        { return T_LT; }
-">"        { return T_GT; }
-"="        { return T_EQ; }
-"!"        { return T_EMARK; }
+"=="        { return updateLastToken(T_EE); }
+"<"        { return updateLastToken(T_LT); }
+">"        { return updateLastToken(T_GT); }
+"="        { return updateLastToken(T_EQ); }
+"!"        { return updateLastToken(T_EMARK); }
 
-"!="        { return T_NE; }
-"<="        { return T_LE; }
-">="        { return T_GE; }
+"!="        { return updateLastToken(T_NE); }
+"<="        { return updateLastToken(T_LE); }
+">="        { return updateLastToken(T_GE); }
 
-"("        { return T_LP; }
-")"        { return T_RP; }
-"{"        { return T_LC; }
+"("        { return updateLastToken(T_LP); }
+")"        { return updateLastToken(T_RP); }
+"{"        { return updateLastToken(T_LC); }
 "}"        { 
-            if (handleImplicitSemicolon("}", yytext)) return T_S;
-            return T_RC; 
+            if (handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
+            return updateLastToken(T_RC); 
            }
-","        { return T_C; }
-";"        { return T_S; }
+","        { return updateLastToken(T_C); }
+";"        { return updateLastToken(T_S); }
 
-break      { return T_BREAK; }
-else      { return T_ELSE; }
-for      { return T_FOR; }
-func      { return T_FUNC; }
-if      { return T_IF; }
-return      { return T_RET; }
-var      { return T_VAR; }
+break      { return updateLastToken(T_BREAK); }
+else      { return updateLastToken(T_ELSE); }
+for      { return updateLastToken(T_FOR); }
+func      { return updateLastToken(T_FUNC); }
+if      { return updateLastToken(T_IF); }
+return      { return updateLastToken(T_RET); }
+var      { return updateLastToken(T_VAR); }
 
 "//"                                  { BEGIN(COMMENT); }
 <COMMENT>{non_ascii_char}             { fprintf(stderr, "error: comment contains non-7bit asci char at or near line %d\n", yylineno); exit(EXIT_FAILURE); }
 <COMMENT>\n                           { BEGIN(INITIAL);}
 <COMMENT>.                            { }
 
-({alph}|_)(({alphNum}|_)*)  { return T_ID; } // identifier
-[0-9][0-9]*         { return T_INT; }   // int literal
+({alph}|_)(({alphNum}|_)*)  { return updateLastToken(T_ID); } // identifier
+[0-9][0-9]*         { return updateLastToken(T_INT); }   // int literal
 
 
 \"                                    { BEGIN(STRING); yymore(); }
-<STRING>\"                            { BEGIN(INITIAL); return T_STRING; }
+<STRING>\"                            { BEGIN(INITIAL); return updateLastToken(T_STRING); }
 <STRING>\n                            { char * temp = strdup(yytext); temp[yyleng-1] = '\0'; // ignore newline by overwriting null terminator
                                         fprintf(stderr, "error: string [%s] terminated by newline at or near line %d\n", temp, yylineno); free(temp); exit(EXIT_FAILURE); }
 <STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
@@ -92,6 +95,11 @@ var      { return T_VAR; }
 {non_ascii_char} { handleWarningSkip("non-ASCII input"); }
 .          { handleWarningUnknown2(yytext, yyleng); }
 %%
+
+yytoken_kind_t updateLastToken(yytoken_kind_t const tok) {
+  lastToken = tok;
+  return tok;
+}
 
 /* All functions are coded here, with prototypes already defined. This avoids many lex.yy.c compiling errrors with gcc */
 const char * getAttribute() {
