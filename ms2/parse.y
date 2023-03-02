@@ -25,6 +25,8 @@ EVERY ONCE IN A WIHLE KEEP CHECKING WITH `bison -Wcounterexamples parse.y`
 if there is a shift reduce error that can be solved reight away instead of starting at completed code full of shift/reduce or reduce/reduce errors
 */
 %}
+%locations
+%define parse.error custom
 
 %union {
     int num;
@@ -141,6 +143,75 @@ Expression : "a" // Expression = UnaryExpr | Expression binary_op Expression see
 
 identifier : T_ID
 %%
+
+// source method: jared's code
+// seeing 'syntax error' only is not helpful. More info is needed
+static int yyreport_syntax_error (const yypcontext_t *yyctx) {
+
+    // Grab the string / current location of the unexpected token
+    char const *unexpectedToken =
+           // if there is no lookahead token (unexpected token), we return the
+           // empty string.
+        yypcontext_token(yyctx) == YYSYMBOL_YYEMPTY
+            ? ""
+            : yysymbol_name (yypcontext_token(yyctx));
+    YYLTYPE unexpectedTokenLoc = *yypcontext_location(yyctx);
+
+    // Again, you should use your own logging facilities!
+    fprintf
+        ( stderr
+        , "Unexpected token `%s` at line %d. "
+        , unexpectedToken
+        , unexpectedTokenLoc.first_line
+        );
+
+    // Grab the tokens that bisoin expected (we only grab at most 10 of them)
+    int const MAX_EXPECTED_TOKENS = 10;
+    yysymbol_kind_t expectedSymbolKinds[MAX_EXPECTED_TOKENS];
+    int actualNumberOfExpectedTokens = 
+        yypcontext_expected_tokens
+            ( yyctx
+            , expectedSymbolKinds
+            , MAX_EXPECTED_TOKENS
+            );
+
+    if (actualNumberOfExpectedTokens < 0) {
+        // this may be negative on errors, so we forward such
+        // errors to `yyparse`
+        fprintf(stderr , "\n");
+        return actualNumberOfExpectedTokens;
+    }
+
+    // read the documentation for why we should do this..
+    if (actualNumberOfExpectedTokens == 0) {
+        if (expectedSymbolKinds[0] != YYSYMBOL_YYEMPTY) {
+            actualNumberOfExpectedTokens = MAX_EXPECTED_TOKENS;
+        }
+    }
+
+    // two cases to get the english sentence to sort of make sense with the
+    // punctuation i.e., want to have
+    // > Expected `<token>`.
+    // vs.
+    // > Expected `<token>`, `<token>`, ..., or `<token>`.
+    //
+    // Note the punctuation...
+    if (actualNumberOfExpectedTokens == 1) {
+        fprintf(stderr, "Expected `%s`.\n", yysymbol_name(expectedSymbolKinds[0]));
+    } else if (actualNumberOfExpectedTokens > 1) {
+        fprintf(stderr, "Expected ");
+        for (int i = 0; i + 1 < actualNumberOfExpectedTokens; ++i)
+            fprintf(stderr, "`%s`, ", yysymbol_name(expectedSymbolKinds[i]));
+
+        fprintf
+            ( stderr
+            , "or `%s`.\n"
+            , yysymbol_name(expectedSymbolKinds[actualNumberOfExpectedTokens - 1])
+            );
+    }
+
+    return 0; //error routine finished successfully, so return 0.
+}
 
 void yyerror(char* err) {
     fprintf(stderr, "%s\n", err);
