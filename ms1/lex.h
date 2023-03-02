@@ -51,6 +51,10 @@ enum Token : int
 #include "parse.tab.h" // this let's compiler know where G_enum_tok_t is coming from
 #endif
 
+// extern keywoards not allowed inside c++ class. lastToken is defined here to allow any other program to access or print it for DEBUGGING
+// although this would be never needed. Reason: lexer will always update it before returning value to yylex(). So lasttoken will always be == current returned token
+extern G_enum_tok_t lastToken; // the LEXER must update the lasttoken. since this header file may be imported by multiple files it is best to make it external var to avoid conflicts
+
 class MyFlexLexer : public yyFlexLexer
 {
 public:
@@ -61,7 +65,6 @@ public:
   int yylex();
   
   std::string getAttribute();
-  G_enum_tok_t lastToken = (G_enum_tok_t) 0; // default last token value: semicolon should not affect program
   static char const *tokenToString(G_enum_tok_t const);
   void myUnput(const char * text);
   void myUnput(const char * text, int si, int ei);

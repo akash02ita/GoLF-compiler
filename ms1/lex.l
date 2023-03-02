@@ -9,6 +9,10 @@
 #include<string.h>
 #include"global.h"
 
+/* last token MUST BE UPDATED IN LEXER ONLY. Otherwise if, for instance, this lex file is used by parser, parser won't be updating it */
+// lastToken global var is defined here (so no conflicts since defined only in one place)
+G_enum_tok_t lastToken = (G_enum_tok_t) 0; // default last token value: semicolon should not affect program
+
 
 MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
     : yyFlexLexer(istream, ostream), myLineNo{1}
@@ -81,9 +85,9 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
 bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
   // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
-  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != T_S;
+  if (condition == "}") flag = lastToken != 0 && lastToken != T_S;
   else { // condition = \n or EOF
-    switch(MyFlexLexer::lastToken) {
+    switch(lastToken) {
       case T_ID: flag = true;
       case T_INT: flag = true;
       case T_STRING: flag = true;
@@ -149,6 +153,12 @@ void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
   }
 }
 void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
+
+G_enum_tok_t updateLastToken(G_enum_tok_t const tok) {
+  // update token and return same token
+  lastToken = tok;
+  return tok;
+}
 %}
 
 alph [a-zA-Z]
@@ -161,57 +171,57 @@ non_ascii_char [^\x00-\x7F]
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return T_S;}
-<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return T_S; return 0; }
+\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
+<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return updateLastToken(T_S); return 0; }
 
-"+"        { return T_ADD; }
-"-"        { return T_SUB; }
-"*"        { return T_MULT; }
-"/"        { return T_DIV; }
-"%"        { return T_MOD; }
+"+"        { return updateLastToken(T_ADD); }
+"-"        { return updateLastToken(T_SUB); }
+"*"        { return updateLastToken(T_MULT); }
+"/"        { return updateLastToken(T_DIV); }
+"%"        { return updateLastToken(T_MOD); }
 
-"&&"        { return T_AND; }
-"||"        { return T_OR; }
+"&&"        { return updateLastToken(T_AND); }
+"||"        { return updateLastToken(T_OR); }
 
-"=="        { return T_EE; }
-"<"        { return T_LT; }
-">"        { return T_GT; }
-"="        { return T_EQ; }
-"!"        { return T_EMARK; }
+"=="        { return updateLastToken(T_EE); }
+"<"        { return updateLastToken(T_LT); }
+">"        { return updateLastToken(T_GT); }
+"="        { return updateLastToken(T_EQ); }
+"!"        { return updateLastToken(T_EMARK); }
 
-"!="        { return T_NE; }
-"<="        { return T_LE; }
-">="        { return T_GE; }
+"!="        { return updateLastToken(T_NE); }
+"<="        { return updateLastToken(T_LE); }
+">="        { return updateLastToken(T_GE); }
 
-"("        { return T_LP; }
-")"        { return T_RP; }
-"{"        { return T_LC; }
+"("        { return updateLastToken(T_LP); }
+")"        { return updateLastToken(T_RP); }
+"{"        { return updateLastToken(T_LC); }
 "}"        { 
-            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return T_S;
-            return T_RC; 
+            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
+            return updateLastToken(T_RC); 
            }
-","        { return T_C; }
-";"        { return T_S; }
+","        { return updateLastToken(T_C); }
+";"        { return updateLastToken(T_S); }
 
-break      { return T_BREAK; }
-else      { return T_ELSE; }
-for      { return T_FOR; }
-func      { return T_FUNC; }
-if      { return T_IF; }
-return      { return T_RET; }
-var      { return T_VAR; }
+break      { return updateLastToken(T_BREAK); }
+else      { return updateLastToken(T_ELSE); }
+for      { return updateLastToken(T_FOR); }
+func      { return updateLastToken(T_FUNC); }
+if      { return updateLastToken(T_IF); }
+return      { return updateLastToken(T_RET); }
+var      { return updateLastToken(T_VAR); }
 
 "//"                                  { BEGIN(COMMENT); }
 <COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
 <COMMENT>.                            { }
 
-({alph}|_)(({alphNum}|_)*)  { return T_ID; } // identifier
-[0-9][0-9]*         { return T_INT; }   // int literal
+({alph}|_)(({alphNum}|_)*)  { return updateLastToken(T_ID); } // identifier
+[0-9][0-9]*         { return updateLastToken(T_INT); }   // int literal
 
 
 \"                                    { BEGIN(STRING); yymore(); }
-<STRING>\"                            { BEGIN(INITIAL); return T_STRING; }
+<STRING>\"                            { BEGIN(INITIAL); return updateLastToken(T_STRING); }
 <STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
 <STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
