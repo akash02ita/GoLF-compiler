@@ -37,10 +37,6 @@ int main(int argc, char **argv)
         // << lexer.lineno() // same value as below
         << lexer.myLineNo
         << "\n";
-
-    // update last token
-    // std::cout << "\t\tlast token was " << MyFlexLexer::tokenToString(lexer.lastToken) << std::endl;
-    lexer.lastToken = (G_enum_tok_t) tk;
   }
   return EXIT_SUCCESS;
 }
