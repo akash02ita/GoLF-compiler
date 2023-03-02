@@ -1,5 +1,5 @@
 test:
-	bison -d parse.y
+	bison -Wcounterexamples -d parse.y
 	flex lex.l
 	gcc -Wall -c parse.tab.c
 	gcc -Wall -c lex.yy.c
