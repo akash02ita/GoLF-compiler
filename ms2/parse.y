@@ -5,13 +5,13 @@
     void yyerror(char * err);
 
 /*
-this is the style on how to do EBNF IN bison
+this is the style on how i am doing EBNF IN bison
 Suppose
     A -> {E}
     // IN BISON THE non-ambgious reduce/reduce way is as follows
     A -> %empty | AE
 
-    A -> [E] // NOTHING TRICKY ABOUT IT just no(empty) or yes
+    A -> [E] // following this style
     // in bison it would be
     A -> %empty | E
 
@@ -66,6 +66,7 @@ if there is a shift reduce error that can be solved reight away instead of start
 
 
 %start prog
+// %start Parameters
 %type <string> SourceFile TopLevelDecl Declaration VarDecl FunctionDecl
 %%
 prog    : SourceFile
@@ -74,11 +75,11 @@ SourceFile	: %empty {fprintf(stdout, "empty sourcefile\n");}
 
 TopLevelDecl : Declaration | FunctionDecl
 Declaration : VarDecl
-VarDecl : T_VAR VarSpec 
-VarSpec : identifier type
+VarDecl : "var" VarSpec 
+VarSpec : identifier Type
 
 
-FunctionDecl : T_FUNC FunctionName Signature FunctionBody
+FunctionDecl : "func" FunctionName Signature FunctionBody
 FunctionName : identifier
 FunctionBody : Block
 
@@ -99,11 +100,26 @@ Type : TypeName
 TypeName : identifier
 // Parameters : "(" [ ParameterList [ T_C ] ] ")"
 // think of [a [b]] -> e|a[b] -> e|a|ab where e=empty
+/* THIS ONE DOES NOT CONFLICT
 Parameters : "(" Parameters1 ")"
 Parameters1 : %empty 
               | ParameterList
-              | ParameterList T_C
-ParameterList : "f"
+              | ParameterList "," */
+Parameters  :  "(" ")" 
+            | "(" ParameterList ")" 
+            | "(" ParameterList "," ")"
+// ParameterList : ParameterDecl { "," ParameterDecl }
+/*
+// NOTE: this part is conflicting
+// THIS IS where conflicts were coming from. Had to make ParameterList a one line solution to resolve conflicts.
+ParameterList : ParameterDecl ParameterList1
+ParameterList1 : %empty 
+               | ParameterList1 "," ParameterDecl
+ParameterDecl : identifier Type */
+/* A -> PD {, PD} -> b {a} -> b a* -> b | Aa, where b=PD and a=,PD */
+ParameterList : ParameterDecl
+              | ParameterList "," ParameterDecl // bingo! this one solves shift reduce
+ParameterDecl : identifier Type
 
 SimpleStmt: "c"
 ReturnStmt: "d"
@@ -112,7 +128,6 @@ IfStmt: "g"
 ForStmt: "h"
 
 identifier : "a"
-type : "b"
 %%
 
 void yyerror(char* err) {
