@@ -121,13 +121,25 @@ ParameterList : ParameterDecl
               | ParameterList "," ParameterDecl // bingo! this one solves shift reduce
 ParameterDecl : identifier Type
 
-SimpleStmt: "c"
-ReturnStmt: "d"
-BreakStmt: "e"
-IfStmt: "g"
-ForStmt: "h"
+SimpleStmt : EmptyStmt
+           | ExpressionStmt
+           | Assignment
 
-identifier : "a"
+ExpressionStmt : Expression
+Assignment : Expression assign_op Expression // this one seems ambigous
+assign_op : "="
+
+EmptyStmt : %empty
+ReturnStmt: "return" | "return" Expression
+BreakStmt: "break"
+IfStmt: "if" Expression Block | "if" Expression Block "else" IfStmt | "if" Expression Block "else" Block
+ForStmt: "for" Block | "for" Condition Block
+
+Condition : Expression
+Expression : "a" // Expression = UnaryExpr | Expression binary_op Expression seems complicated may do this later (looks ambgious and unary op have highest precedence so they must be lower in the recursion)
+
+
+identifier : T_ID
 %%
 
 void yyerror(char* err) {
