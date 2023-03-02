@@ -55,7 +55,13 @@ public:
     T_STRING
   };
 
+  Token lastToken = (Token) 0; // default last token value: semicolon should not affect program
   static char const *tokenToString(Token const);
-  void myUnput(char * text);
-  void myUnput(char * text, int si, int ei);
+  void myUnput(const char * text);
+  void myUnput(const char * text, int si, int ei);
+  bool handleImplicitSemicolon(std::string condition, std::string input);
+  void handleWarningUnknown(const char * text);
+  void handleWarningUnknown(const char * text, int mylen);
+  void handleWarningSkip(const char * text);
+  void handleWarningSkip(const char * text, int mylen);
 };

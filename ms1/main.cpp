@@ -8,15 +8,22 @@
 
 int main(int argc, char **argv)
 {
-  std::ifstream file{argv[1]};
-
-  if (!file.is_open())
+  if (argc != 2) return 0; // if this line is uncommented, then stdin is not allowed
+  std::istream *input = &std::cin;
+  std::ifstream file;
+  if (argc == 2)
   {
-    std::cerr << "failed opening file\n";
-    return EXIT_FAILURE;
+    file.open(argv[1]);
+    if (!file.is_open())
+    {
+      std::cerr << "failed opening file\n";
+      return EXIT_FAILURE;
+    }
+
+    input = &file;
   }
 
-  class MyFlexLexer lexer = MyFlexLexer{file, std::cout};
+  class MyFlexLexer lexer = MyFlexLexer{*input, std::cout};
 
   int tk;
   while ((tk = lexer.yylex()) != 0)
@@ -27,8 +34,13 @@ int main(int argc, char **argv)
         << lexer.getAttribute()
         << "`"
         << " at line "
+        // << lexer.lineno() // same value as below
         << lexer.myLineNo
         << "\n";
+
+    // update last token
+    // std::cout << "\t\tlast token was " << MyFlexLexer::tokenToString(lexer.lastToken) << std::endl;
+    lexer.lastToken = (MyFlexLexer::Token)tk;
   }
   return EXIT_SUCCESS;
 }

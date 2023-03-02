@@ -1,10 +1,12 @@
 %option noyywrap
 %option c++
 %option yyclass="MyFlexLexer"
-
+%option yylineno
 %{
 #include"lex.h"
 #include<cstdlib>
+#include<ctype.h>
+#include<string.h>
 
 
 MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
@@ -18,76 +20,43 @@ std::string MyFlexLexer::getAttribute() {
 
 char const* MyFlexLexer::tokenToString(Token const tok) {
       switch (tok) {
-        case T_BREAK:
-          return "T_BREAK";
-        case T_ELSE:
-          return "T_ELSE";
-        case T_FOR:
-          return "T_FOR";
-        case T_FUNC:
-          return "T_FUNC";
-        case T_IF:
-          return "T_IF";
-        case T_RET:
-          return "T_RET";
-        case T_VAR:
-          return "T_VAR";
-        case T_ADD:
-          return "T_ADD";
-        case T_SUB:
-          return "T_SUB";
-        case T_MULT:
-          return "T_MULT";
-        case T_DIV:
-          return "T_DIV";
-        case T_MOD:
-          return "T_MOD";
-        case T_AND:
-          return "T_AND";
-        case T_OR:
-          return "T_OR";
-        case T_EE:
-          return "T_EE";
-        case T_LT:
-          return "T_LT";
-        case T_GT:
-          return "T_GT";
-        case T_EQ:
-          return "T_EQ";
-        case T_EMARK:
-          return "T_EMARK";
-        case T_NE:
-          return "T_NE";
-        case T_LE:
-          return "T_LE";
-        case T_GE:
-          return "T_GE";
-        case T_LP:
-          return "T_LP";
-        case T_RP:
-          return "T_RP";
-        case T_LC:
-          return "T_LC";
-        case T_RC:
-          return "T_RC";
-        case T_C:
-          return "T_C";
-        case T_S:
-          return "T_S";
-        case T_ID:
-          return "T_ID";
-        case T_INT:
-          return "T_INT";
-        case T_STRING:
-          return "T_STRING";
-        default:
-          return "<bad token>";
+        case T_BREAK:     return "T_BREAK";
+        case T_ELSE:      return "T_ELSE";
+        case T_FOR:       return "T_FOR";
+        case T_FUNC:      return "T_FUNC";
+        case T_IF:        return "T_IF";
+        case T_RET:       return "T_RET";
+        case T_VAR:       return "T_VAR";
+        case T_ADD:       return "T_ADD";
+        case T_SUB:       return "T_SUB";
+        case T_MULT:      return "T_MULT";
+        case T_DIV:       return "T_DIV";
+        case T_MOD:       return "T_MOD";
+        case T_AND:       return "T_AND";
+        case T_OR:        return "T_OR";
+        case T_EE:        return "T_EE";
+        case T_LT:        return "T_LT";
+        case T_GT:        return "T_GT";
+        case T_EQ:        return "T_EQ";
+        case T_EMARK:     return "T_EMARK";
+        case T_NE:        return "T_NE";
+        case T_LE:        return "T_LE";
+        case T_GE:        return "T_GE";
+        case T_LP:        return "T_LP";
+        case T_RP:        return "T_RP";
+        case T_LC:        return "T_LC";
+        case T_RC:        return "T_RC";
+        case T_C:         return "T_C";
+        case T_S:         return "T_S";
+        case T_ID:        return "T_ID";
+        case T_INT:       return "T_INT";
+        case T_STRING:    return "T_STRING";
+        default:          return "<bad token>";
       }
     }
 
-MyFlexLexer::Token lastToken = MyFlexLexer::T_S; // default last token value: semicolon should not affect program
 
-void MyFlexLexer::myUnput(char * text) {
+void MyFlexLexer::myUnput(const char * text) {
   int i;
   /* Copy yytext because unput() trashes yytext */
   char *yycopy = strdup( text );
@@ -96,7 +65,7 @@ void MyFlexLexer::myUnput(char * text) {
   free( yycopy );
 }
 
-void MyFlexLexer::myUnput(char * text, int si, int ei) {
+void MyFlexLexer::myUnput(const char * text, int si, int ei) {
   if ((ei-si) <= (int) strlen(text)) {
     char* subtext = (char*) malloc((ei-si+1) * sizeof(char));
     strncpy(subtext, text + si, ei - si);
@@ -105,24 +74,93 @@ void MyFlexLexer::myUnput(char * text, int si, int ei) {
   }
   fprintf(stderr, "myUnput range is longer than input text!");
   exit(EXIT_FAILURE);
+
+}
+bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
+  // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
+  bool flag = false;
+  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != MyFlexLexer::T_S;
+  else { // condition = \n or EOF
+    switch(MyFlexLexer::lastToken) {
+      case T_ID: flag = true;
+      case T_INT: flag = true;
+      case T_STRING: flag = true;
+      case T_BREAK: flag = true;
+      case T_RET: flag = true;
+      case T_RP: flag = true;
+      case T_RC: flag = true;
+      default: break;
+    }
+  }
+
+  if (flag && (condition == "\n" || condition == "}")) {
+    // std::cout << "\t\tDEBUG: handle implicit unputting {" << input << "} " << std::endl;
+    myUnput(input.c_str());
+    // myLine-- is not always right, unless myLine -= occurences of \n in input
+    myLineNo = yylineno; // bug fix: must restore linenumber.
+    
+  }
+
+  // std::cout << "\t\tDEBUG: handle implicit returning flag: " << flag << std::endl;
+  return flag;
 }
 
 const int MAX_WARNINGS = 11;
 int numWarnings = 0;
+
+std::string filterText(const char * text, int mylen) {
+  std::string r = "";
+  for (int i = 0; i < mylen; i++) {
+    char c = text[i];
+    // idea source: https://stackoverflow.com/questions/14647979/is-it-possible-to-print-non-printing-characters-with-a-c-specifier
+    if (isprint(c)) r += c;
+    else {
+      switch(c) {
+        case '\n': r += "\\n"; break;
+        case '\v': r += "\\v"; break;
+        case '\t': r += "\\t"; break;
+        case '\f': r += "\\f"; break;
+        case '\r': r += "\\r"; break;
+        case '\0': r += "NUL"; break;
+        default:   {char * temp; asprintf(&temp, "\\x%02x", c); r += temp; free(temp); break;}
+      }
+    }
+  }
+
+  return r;
+}
+void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
+  if (++numWarnings < MAX_WARNINGS)  {
+    std::cerr << "warning: skipping unknown character `" << filterText(text, mylen) << "`" << " at or near line " << myLineNo << std::endl;
+  } else {
+    std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+void MyFlexLexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
+void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
+  if (++numWarnings < MAX_WARNINGS)  {
+    std::cerr << "warning: skipping " << filterText(text, mylen) << " character" << " at or near line " << myLineNo << std::endl;
+  } else {
+    std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
 %}
 
 alph [a-zA-Z]
 alphNum [a-zA-Z0-9]
 
 non_ascii_char [^\x00-\x7F]
-ascii_char .
-ascii_char2 . [^{non_ascii_char}\n]
 
 %x STRING
+%x COMMENT
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; }
+\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return MyFlexLexer::T_S;}
+<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return MyFlexLexer::T_S; return 0; }
 
 "+"        { return MyFlexLexer::T_ADD; }
 "-"        { return MyFlexLexer::T_SUB; }
@@ -146,7 +184,10 @@ ascii_char2 . [^{non_ascii_char}\n]
 "("        { return MyFlexLexer::T_LP; }
 ")"        { return MyFlexLexer::T_RP; }
 "{"        { return MyFlexLexer::T_LC; }
-"}"        { return MyFlexLexer::T_RC; }
+"}"        { 
+            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return MyFlexLexer::T_S;
+            return MyFlexLexer::T_RC; 
+           }
 ","        { return MyFlexLexer::T_C; }
 ";"        { return MyFlexLexer::T_S; }
 
@@ -158,27 +199,27 @@ if      { return MyFlexLexer::T_IF; }
 return      { return MyFlexLexer::T_RET; }
 var      { return MyFlexLexer::T_VAR; }
 
-"//"{ascii_char}*       {} // skip comments
+"//"                                  { BEGIN(COMMENT); }
+<COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
+<COMMENT>.                            { }
 
-{alph}({alphNum}*)  { return MyFlexLexer::T_ID; } // identifier
-[0-9][0-9]*         {return MyFlexLexer::T_INT; }   // int literal
-
-\"         { BEGIN(STRING); yymore(); }
-<STRING>\" { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
-<STRING>\n { fprintf(stderr, "lexer error %s", yytext); BEGIN(INITIAL); }
-<STRING>\b|\f|\r|\t|\\|\\\"  { yymore(); }
-<STRING>{alphNum}|\' {yymore();}
-<STRING>.  { fprintf(stderr, "bad string error at or near line %d\n", myLineNo); exit(EXIT_FAILURE); }
+({alph}|_)(({alphNum}|_)*)  { return MyFlexLexer::T_ID; } // identifier
+[0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
 
 
+\"                                    { BEGIN(STRING); yymore(); }
+<STRING>\"                            { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
+<STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
+<STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING><<EOF>>                       {std::cerr << "error: string [" << yytext << "] terminated by EOF at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE);} // TODO: yytext is empty on EOF
+<STRING>\\.                           { std::cerr << "error: bad string escape '" << yytext[yyleng-1] << "' at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>.                             { yymore(); } // everything else is valid, including _?!''
 
-
-.          {
-    if (++numWarnings < MAX_WARNINGS)  {
-      std::cerr << "warning: skipping unknown character `" << getAttribute() << "`" << " at or near line " << myLineNo << std::endl; 
-    } else {
-      std::cerr << "error: too many warnings at or near line " << myLineNo << std::endl;
-      exit(EXIT_FAILURE);
-    } 
-  }
+"&"          { std::cerr << "error: bitwise AND not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+"|"          { std::cerr << "error: bitwise OR not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+\0         { handleWarningSkip("NUL"); }
+{non_ascii_char} { handleWarningSkip("non-ASCII input"); }
+.          { handleWarningUnknown(yytext, yyleng); }
 %%
