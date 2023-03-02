@@ -18,3 +18,11 @@ To remove compiled files
 make clean
 ```
 which should remove the executable file and the object files as well.
+
+To see report of program you may test it as well in **tests* folder. For testing type:
+```
+make
+cd tests
+./run
+```
+and a file called `run.output` will be generated to inspect and debug the output of code.
