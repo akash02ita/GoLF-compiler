@@ -68,7 +68,7 @@ public:
   static char const *tokenToString(G_enum_tok_t const);
   void myUnput(const char * text);
   void myUnput(const char * text, int si, int ei);
-  bool handleImplicitSemicolon(std::string condition, std::string input);
+  bool handleImplicitSemicolon(std::string condition, std::string input = ""); // default arg declared here in header file
   void handleWarningUnknown(const char * text);
   void handleWarningUnknown(const char * text, int mylen);
   void handleWarningSkip(const char * text);
