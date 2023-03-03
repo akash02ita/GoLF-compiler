@@ -1,6 +1,10 @@
 import re
 
 def is_intlit(txt: str):
+    if "\n" in txt: return False
+    if "\r" in txt: return False
+    if "\v" in txt: return False
+    if "\f" in txt: return False
     # 0 or a non-zero digit followed by any number of (underscore digit) or digit
     decimal_lit = "0|[1-9](_?[0-9])*"  
     # 0b or 0B followed by at least one occurence of (underscore digit) or digit
