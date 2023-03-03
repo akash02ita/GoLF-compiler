@@ -1,5 +1,6 @@
 %option noyywrap
 %{
+    // this one has simplified regex compared to sol1.l
     #include <stdio.h>
     #define true 1
     #define false 0
