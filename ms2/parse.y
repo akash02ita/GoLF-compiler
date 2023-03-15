@@ -67,8 +67,9 @@ if there is a shift reduce error that can be solved reight away instead of start
 
 
 
-%start prog
+// %start prog
 // %start Parameters
+%start Expression
 %type <string> SourceFile TopLevelDecl Declaration VarDecl FunctionDecl
 %%
 prog    : SourceFile
@@ -128,7 +129,7 @@ SimpleStmt : EmptyStmt
            | Assignment
 
 ExpressionStmt : Expression
-Assignment : Expression assign_op Expression // this one seems ambigous
+Assignment : Expression assign_op Expression // this one seems ambigous: still compiles for now
 assign_op : "="
 
 EmptyStmt : %empty
@@ -138,8 +139,27 @@ IfStmt: "if" Expression Block | "if" Expression Block "else" IfStmt | "if" Expre
 ForStmt: "for" Block | "for" Condition Block
 
 Condition : Expression
-Expression : "a" // Expression = UnaryExpr | Expression binary_op Expression seems complicated may do this later (looks ambgious and unary op have highest precedence so they must be lower in the recursion)
+Expression : pl2expr | Expression "||" pl2expr // or "||" has lowest precedence (precedence level 1 operator)
+    pl2expr : pl3expr | pl2expr "&&" pl3expr  // precedence level2 expression (the larger the precedene number the higher the priority to evaluate that expression first)
+    pl3expr : pl4expr | pl3expr rel_op pl4expr
+    pl4expr : pl5expr | pl4expr add_op pl5expr
+    pl5expr : pl6expr | pl5expr mul_op pl6expr
+    pl6expr : UnaryExpr
 
+UnaryExpr  : PrimaryExpr | unary_op UnaryExpr
+// PrimaryExpr works! without conflicts!
+PrimaryExpr : "terminal "| "(" Expression ")" // this is a quick test if Expression can be called without conflicts. Both terminals surrounded on Expression works
+// PrimaryExpr : "terminal "| "(" Expression // this fails: why? The grammar should not be ambigous (or is it?). each time you reach this line and want to recurse again to Expression "(" terminal must always be added. Maybe the grammar is non-ambiguous but causes reduce/shift conflicts.
+// PrimaryExpr : "terminal "| Expression ")" // this fails: why? The grammar should not be ambigous (or is it?).Maybe the grammar is non-ambiguous but causes reduce/shift conflicts.
+// PrimaryExpr : "terminal "| Expression // this fails: why? The grammar seems ambigous. You can infinitely recurse from Expression to PrimaryExpr and then end with "terminal". This means there are infinitely possible derivations and parse trees for this
+
+    or_op     : "||" // precedence of 1 (lowest priority in evalutation)
+    and_op    : "&&" // precedence of 2
+    rel_op    : "==" | "!=" | "<" | "<=" | ">" | ">=" // precedence of 3
+    add_op    : "+" | "-" // precedence of 4
+    mul_op    : "*" | "/" | "%" // precedence of 5
+
+    unary_op   : "-" | "!" // precedence of 6 (highest priority in evaluation)
 
 identifier : T_ID
 %%
