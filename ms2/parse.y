@@ -4,26 +4,6 @@
     int yylex(void);
     void yyerror(char * err);
 
-/*
-this is the style on how i am doing EBNF IN bison
-Suppose
-    A -> {E}
-    // IN BISON THE non-ambgious reduce/reduce way is as follows
-    A -> %empty | AE
-
-    A -> [E] // following this style
-    // in bison it would be
-    A -> %empty | E
-
-// other thing to mention
-    // while building grammar
-        // each endpoint is best to terminate with different symbol
-            // where the symbol is terminal
-        // same %empty in all endpoints or same symbol may lead to ambiguity even if grammar is non-ambiguous 
-
-EVERY ONCE IN A WIHLE KEEP CHECKING WITH `bison -Wcounterexamples parse.y`
-if there is a shift reduce error that can be solved reight away instead of starting at completed code full of shift/reduce or reduce/reduce errors
-*/
 %}
 %locations
 %define parse.error custom
@@ -76,15 +56,15 @@ SourceFile	: %empty {fprintf(stdout, "empty sourcefile\n");}
 
 TopLevelDecl : Declaration | FunctionDecl
 Declaration : VarDecl
-VarDecl : "var" VarSpec 
+VarDecl : T_VAR VarSpec 
 VarSpec : identifier Type
 
 
-FunctionDecl : "func" FunctionName Signature FunctionBody
+FunctionDecl : T_FUNC FunctionName Signature FunctionBody
 FunctionName : identifier
 FunctionBody : Block
 
-Block: "{" StatementList "}"
+Block: T_LC StatementList T_RC
 StatementList : %empty
               | StatementList Statement T_S
 Statement : Declaration
@@ -99,27 +79,12 @@ Signature : Parameters | Parameters Result
 Result : Type
 Type : TypeName
 TypeName : identifier
-// Parameters : "(" [ ParameterList [ T_C ] ] ")"
-// think of [a [b]] -> e|a[b] -> e|a|ab where e=empty
-/* THIS ONE DOES NOT CONFLICT
-Parameters : "(" Parameters1 ")"
-Parameters1 : %empty 
-              | ParameterList
-              | ParameterList "," */
-Parameters  :  "(" ")" 
-            | "(" ParameterList ")" 
-            | "(" ParameterList "," ")"
-// ParameterList : ParameterDecl { "," ParameterDecl }
-/*
-// NOTE: this part is conflicting
-// THIS IS where conflicts were coming from. Had to make ParameterList a one line solution to resolve conflicts.
-ParameterList : ParameterDecl ParameterList1
-ParameterList1 : %empty 
-               | ParameterList1 "," ParameterDecl
-ParameterDecl : identifier Type */
-/* A -> PD {, PD} -> b {a} -> b a* -> b | Aa, where b=PD and a=,PD */
+
+Parameters  :  T_LP T_RP 
+            | T_LP ParameterList T_RP 
+            | T_LP ParameterList T_C T_RP
 ParameterList : ParameterDecl
-              | ParameterList "," ParameterDecl // bingo! this one solves shift reduce
+              | ParameterList T_C ParameterDecl
 ParameterDecl : identifier Type
 
 SimpleStmt : EmptyStmt
@@ -128,42 +93,42 @@ SimpleStmt : EmptyStmt
 
 ExpressionStmt : Expression
 Assignment : Expression assign_op Expression // this one seems ambigous: still compiles for now
-assign_op : "="
+assign_op : T_EQ
 
 EmptyStmt : %empty
-ReturnStmt: "return" | "return" Expression
-BreakStmt: "break"
-IfStmt: "if" Expression Block | "if" Expression Block "else" IfStmt | "if" Expression Block "else" Block
-ForStmt: "for" Block | "for" Condition Block
+ReturnStmt: T_RET | T_RET Expression
+BreakStmt: T_BREAK
+IfStmt: T_IF Expression Block | T_IF Expression Block T_ELSE IfStmt | T_IF Expression Block T_ELSE Block
+ForStmt: T_FOR Block | T_FOR Condition Block
 
 Condition : Expression
-Expression : pl2expr | Expression "||" pl2expr // or "||" has lowest precedence (precedence level 1 operator)
-    pl2expr : pl3expr | pl2expr "&&" pl3expr  // precedence level2 expression (the larger the precedene number the higher the priority to evaluate that expression first)
+Expression : pl2expr | Expression or_op pl2expr // or "||" has lowest precedence (precedence level 1 operator)
+    pl2expr : pl3expr | pl2expr and_op pl3expr  // precedence level2 expression (the larger the precedene number the higher the priority to evaluate that expression first)
     pl3expr : pl4expr | pl3expr rel_op pl4expr
     pl4expr : pl5expr | pl4expr add_op pl5expr
     pl5expr : pl6expr | pl5expr mul_op pl6expr
     pl6expr : UnaryExpr
 
 UnaryExpr  : PrimaryExpr | unary_op UnaryExpr
-    or_op     : "||" // precedence of 1 (lowest priority in evalutation)
-    and_op    : "&&" // precedence of 2
-    rel_op    : "==" | "!=" | "<" | "<=" | ">" | ">=" // precedence of 3
-    add_op    : "+" | "-" // precedence of 4
-    mul_op    : "*" | "/" | "%" // precedence of 5
+    or_op     : T_OR // precedence of level 1 (lowest priority in evalutation)
+    and_op    : T_AND // precedence of level 2
+    rel_op    : T_EE | T_NE | T_LT | T_LE | T_GT | T_GE // precedence of level 3
+    add_op    : T_ADD | T_SUB // precedence of level 4
+    mul_op    : T_MULT | T_DIV | T_MOD // precedence of level 5
 
-    unary_op   : "-" | "!" // precedence of 6 (highest priority in evaluation)
+    unary_op   : T_SUB | T_EMARK // precedence of level 6 (highest priority in evaluation)
 
 PrimaryExpr : Operand | PrimaryExpr Arguments
 
-Operand : Literal | OperandName | "(" Expression ")"
+Operand : Literal | OperandName | T_LP Expression T_RP
 OperandName : identifier
 Literal : BasicLit
 BasicLit: int_lit | string_lit
 
-Arguments : "(" ")"
-          | "(" ExpressionList ")"
-          | "(" ExpressionList "," ")"
-ExpressionList : Expression | ExpressionList "," Expression
+Arguments : T_LP T_RP
+          | T_LP ExpressionList T_RP
+          | T_LP ExpressionList T_C T_RP
+ExpressionList : Expression | ExpressionList T_C Expression
 
 int_lit : T_INT
 string_lit : T_STRING
