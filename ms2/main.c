@@ -3,8 +3,11 @@
 #include <stdio.h>
 #include "lex.h"
 
+#define ALLOW_STDIN
+
 int yylex();
 int main(int argc, char** argv) {
+#ifndef ALLOW_STDIN
     if (argc < 2) {
         fprintf(stderr, "Too few arguments. Usage ./golf <filename>\n");
         return EXIT_FAILURE;
@@ -14,6 +17,9 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     yyin = fopen(argv[1], "r");
+#else
+    yyin = stdin;
+#endif
 
     if (yyin == NULL) {
         fprintf(stderr, "Could not open file!\n");
