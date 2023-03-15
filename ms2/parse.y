@@ -67,9 +67,7 @@ if there is a shift reduce error that can be solved reight away instead of start
 
 
 
-// %start prog
-// %start Parameters
-%start Expression
+%start prog
 %type <string> SourceFile TopLevelDecl Declaration VarDecl FunctionDecl
 %%
 prog    : SourceFile
@@ -147,12 +145,6 @@ Expression : pl2expr | Expression "||" pl2expr // or "||" has lowest precedence 
     pl6expr : UnaryExpr
 
 UnaryExpr  : PrimaryExpr | unary_op UnaryExpr
-// PrimaryExpr works! without conflicts!
-PrimaryExpr : "terminal "| "(" Expression ")" // this is a quick test if Expression can be called without conflicts. Both terminals surrounded on Expression works
-// PrimaryExpr : "terminal "| "(" Expression // this fails: why? The grammar should not be ambigous (or is it?). each time you reach this line and want to recurse again to Expression "(" terminal must always be added. Maybe the grammar is non-ambiguous but causes reduce/shift conflicts.
-// PrimaryExpr : "terminal "| Expression ")" // this fails: why? The grammar should not be ambigous (or is it?).Maybe the grammar is non-ambiguous but causes reduce/shift conflicts.
-// PrimaryExpr : "terminal "| Expression // this fails: why? The grammar seems ambigous. You can infinitely recurse from Expression to PrimaryExpr and then end with "terminal". This means there are infinitely possible derivations and parse trees for this
-
     or_op     : "||" // precedence of 1 (lowest priority in evalutation)
     and_op    : "&&" // precedence of 2
     rel_op    : "==" | "!=" | "<" | "<=" | ">" | ">=" // precedence of 3
@@ -161,6 +153,20 @@ PrimaryExpr : "terminal "| "(" Expression ")" // this is a quick test if Express
 
     unary_op   : "-" | "!" // precedence of 6 (highest priority in evaluation)
 
+PrimaryExpr : Operand | PrimaryExpr Arguments
+
+Operand : Literal | OperandName | "(" Expression ")"
+OperandName : identifier
+Literal : BasicLit
+BasicLit: int_lit | string_lit
+
+Arguments : "(" ")"
+          | "(" ExpressionList ")"
+          | "(" ExpressionList "," ")"
+ExpressionList : Expression | ExpressionList "," Expression
+
+int_lit : T_INT
+string_lit : T_STRING
 identifier : T_ID
 %%
 
