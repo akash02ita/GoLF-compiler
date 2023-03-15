@@ -48,10 +48,12 @@
 
 
 %start prog
-%type <string> SourceFile TopLevelDecl Declaration VarDecl FunctionDecl
+%type <string> prog SourceFile TopLevelDecl Declaration VarDecl VarSpec FunctionDecl FunctionName FunctionBody Block Statement Signature Result Type TypeName Parameters ParameterList ParameterDecl SimpleStmt ExpressionStmt Assignment assign_op ReturnStmt BreakStmt IfStmt ForStmt Condition Expression pl2expr pl3expr pl4expr pl5expr pl6expr UnaryExpr or_op and_op rel_op add_op mul_op unary_op PrimaryExpr Operand OperandName Literal BasicLit Arguments ExpressionList int_lit string_lit identifier
+%type <string> StatementList EmptyStmt
 %%
+
 prog    : SourceFile
-SourceFile	: %empty {fprintf(stdout, "empty sourcefile\n");}
+SourceFile	: %empty {$$ = ""; } // do not print anything for now
 			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
 
 TopLevelDecl : Declaration | FunctionDecl
@@ -64,8 +66,8 @@ FunctionDecl : T_FUNC FunctionName Signature FunctionBody
 FunctionName : identifier
 FunctionBody : Block
 
-Block: T_LC StatementList T_RC
-StatementList : %empty
+Block : T_LC StatementList T_RC
+StatementList : %empty  {$$ = "";} // this is to avoid %type <string> StatementList 'empty warning'
               | StatementList Statement T_S
 Statement : Declaration
           | SimpleStmt
@@ -95,11 +97,11 @@ ExpressionStmt : Expression
 Assignment : Expression assign_op Expression // this one seems ambigous: still compiles for now
 assign_op : T_EQ
 
-EmptyStmt : %empty
-ReturnStmt: T_RET | T_RET Expression
-BreakStmt: T_BREAK
-IfStmt: T_IF Expression Block | T_IF Expression Block T_ELSE IfStmt | T_IF Expression Block T_ELSE Block
-ForStmt: T_FOR Block | T_FOR Condition Block
+EmptyStmt : %empty {$$ = ""; } // this is to avoid %type <string> EmptyStmt '%empty warning'
+ReturnStmt : T_RET | T_RET Expression
+BreakStmt : T_BREAK
+IfStmt : T_IF Expression Block | T_IF Expression Block T_ELSE IfStmt | T_IF Expression Block T_ELSE Block
+ForStmt : T_FOR Block | T_FOR Condition Block
 
 Condition : Expression
 Expression : pl2expr | Expression or_op pl2expr // or "||" has lowest precedence (precedence level 1 operator)
@@ -123,7 +125,7 @@ PrimaryExpr : Operand | PrimaryExpr Arguments
 Operand : Literal | OperandName | T_LP Expression T_RP
 OperandName : identifier
 Literal : BasicLit
-BasicLit: int_lit | string_lit
+BasicLit : int_lit | string_lit
 
 Arguments : T_LP T_RP
           | T_LP ExpressionList T_RP
