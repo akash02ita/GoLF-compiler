@@ -1,13 +1,20 @@
 %option noyywrap
 %option c++
-%option yyclass="MyFlexLexer"
+%option yyclass="GoLF::Lexer"
 %option yylineno
 %{
-#include"lex.h"
 #include<cstdlib>
 #include<ctype.h>
 #include<string.h>
+
 #include"global.h"
+#include"lex.h"
+#if MODE == PARSER_MODE
+  #include "parse.tab.h"
+  #undef  YY_DECL
+  #define YY_DECL int GoLF::Lexer::yylex(GoLF::Parser::semantic_type *yylval,\
+  GoLF::Parser::location_type *loc)
+#endif
 
 /* last token MUST BE UPDATED IN LEXER ONLY. Otherwise if, for instance, this lex file is used by parser, parser won't be updating it */
 // lastToken global var is defined here (so no conflicts since defined only in one place)
@@ -26,57 +33,57 @@ non_ascii_char [^\x00-\x7F]
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
-<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return updateLastToken(T_S); return 0; }
+\n         { ++myLineNo; if (GoLF::Lexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(G_enum_tok_t::T_S);}
+<INITIAL><<EOF>>    { if (GoLF::Lexer::handleImplicitSemicolon("EOF")) return updateLastToken(G_enum_tok_t::T_S); return 0; }
 
-"+"        { return updateLastToken(T_ADD); }
-"-"        { return updateLastToken(T_SUB); }
-"*"        { return updateLastToken(T_MULT); }
-"/"        { return updateLastToken(T_DIV); }
-"%"        { return updateLastToken(T_MOD); }
+"+"        { return updateLastToken(G_enum_tok_t::T_ADD); }
+"-"        { return updateLastToken(G_enum_tok_t::T_SUB); }
+"*"        { return updateLastToken(G_enum_tok_t::T_MULT); }
+"/"        { return updateLastToken(G_enum_tok_t::T_DIV); }
+"%"        { return updateLastToken(G_enum_tok_t::T_MOD); }
 
-"&&"        { return updateLastToken(T_AND); }
-"||"        { return updateLastToken(T_OR); }
+"&&"        { return updateLastToken(G_enum_tok_t::T_AND); }
+"||"        { return updateLastToken(G_enum_tok_t::T_OR); }
 
-"=="        { return updateLastToken(T_EE); }
-"<"        { return updateLastToken(T_LT); }
-">"        { return updateLastToken(T_GT); }
-"="        { return updateLastToken(T_EQ); }
-"!"        { return updateLastToken(T_EMARK); }
+"=="        { return updateLastToken(G_enum_tok_t::T_EE); }
+"<"        { return updateLastToken(G_enum_tok_t::T_LT); }
+">"        { return updateLastToken(G_enum_tok_t::T_GT); }
+"="        { return updateLastToken(G_enum_tok_t::T_EQ); }
+"!"        { return updateLastToken(G_enum_tok_t::T_EMARK); }
 
-"!="        { return updateLastToken(T_NE); }
-"<="        { return updateLastToken(T_LE); }
-">="        { return updateLastToken(T_GE); }
+"!="        { return updateLastToken(G_enum_tok_t::T_NE); }
+"<="        { return updateLastToken(G_enum_tok_t::T_LE); }
+">="        { return updateLastToken(G_enum_tok_t::T_GE); }
 
-"("        { return updateLastToken(T_LP); }
-")"        { return updateLastToken(T_RP); }
-"{"        { return updateLastToken(T_LC); }
+"("        { return updateLastToken(G_enum_tok_t::T_LP); }
+")"        { return updateLastToken(G_enum_tok_t::T_RP); }
+"{"        { return updateLastToken(G_enum_tok_t::T_LC); }
 "}"        { 
-            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
-            return updateLastToken(T_RC); 
+            if (GoLF::Lexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(G_enum_tok_t::T_S);
+            return updateLastToken(G_enum_tok_t::T_RC); 
            }
-","        { return updateLastToken(T_C); }
-";"        { return updateLastToken(T_S); }
+","        { return updateLastToken(G_enum_tok_t::T_C); }
+";"        { return updateLastToken(G_enum_tok_t::T_S); }
 
-break      { return updateLastToken(T_BREAK); }
-else      { return updateLastToken(T_ELSE); }
-for      { return updateLastToken(T_FOR); }
-func      { return updateLastToken(T_FUNC); }
-if      { return updateLastToken(T_IF); }
-return      { return updateLastToken(T_RET); }
-var      { return updateLastToken(T_VAR); }
+break      { return updateLastToken(G_enum_tok_t::T_BREAK); }
+else      { return updateLastToken(G_enum_tok_t::T_ELSE); }
+for      { return updateLastToken(G_enum_tok_t::T_FOR); }
+func      { return updateLastToken(G_enum_tok_t::T_FUNC); }
+if      { return updateLastToken(G_enum_tok_t::T_IF); }
+return      { return updateLastToken(G_enum_tok_t::T_RET); }
+var      { return updateLastToken(G_enum_tok_t::T_VAR); }
 
 "//"                                  { BEGIN(COMMENT); }
 <COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
 <COMMENT>.                            { }
 
-({alph}|_)(({alphNum}|_)*)  { return updateLastToken(T_ID); } // identifier
-[0-9][0-9]*         { return updateLastToken(T_INT); }   // int literal
+({alph}|_)(({alphNum}|_)*)  { return updateLastToken(G_enum_tok_t::T_ID); } // identifier
+[0-9][0-9]*         { return updateLastToken(G_enum_tok_t::T_INT); }   // int literal
 
 
 \"                                    { BEGIN(STRING); yymore(); }
-<STRING>\"                            { BEGIN(INITIAL); return updateLastToken(T_STRING); }
+<STRING>\"                            { BEGIN(INITIAL); return updateLastToken(G_enum_tok_t::T_STRING); }
 <STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
 <STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
 <STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
@@ -100,55 +107,55 @@ G_enum_tok_t updateLastToken(G_enum_tok_t const tok) {
 }
 
 // prototypes for functions/methods below are already defined in header file
-MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
+GoLF::Lexer::Lexer(std::istream& istream, std::ostream& ostream)
     : yyFlexLexer(istream, ostream), myLineNo{1}
 {
 }
 
-std::string MyFlexLexer::getAttribute() {
+std::string GoLF::Lexer::getAttribute() {
   // something yyleng < strlen(text) when using unput. Thus, this way is better
   return std::string(YYText(), YYLeng());
 }
 
-char const* MyFlexLexer::tokenToString(G_enum_tok_t const tok) {
+char const* GoLF::Lexer::tokenToString(G_enum_tok_t const tok) {
       switch (tok) {
-        case T_BREAK:     return "T_BREAK";
-        case T_ELSE:      return "T_ELSE";
-        case T_FOR:       return "T_FOR";
-        case T_FUNC:      return "T_FUNC";
-        case T_IF:        return "T_IF";
-        case T_RET:       return "T_RET";
-        case T_VAR:       return "T_VAR";
-        case T_ADD:       return "T_ADD";
-        case T_SUB:       return "T_SUB";
-        case T_MULT:      return "T_MULT";
-        case T_DIV:       return "T_DIV";
-        case T_MOD:       return "T_MOD";
-        case T_AND:       return "T_AND";
-        case T_OR:        return "T_OR";
-        case T_EE:        return "T_EE";
-        case T_LT:        return "T_LT";
-        case T_GT:        return "T_GT";
-        case T_EQ:        return "T_EQ";
-        case T_EMARK:     return "T_EMARK";
-        case T_NE:        return "T_NE";
-        case T_LE:        return "T_LE";
-        case T_GE:        return "T_GE";
-        case T_LP:        return "T_LP";
-        case T_RP:        return "T_RP";
-        case T_LC:        return "T_LC";
-        case T_RC:        return "T_RC";
-        case T_C:         return "T_C";
-        case T_S:         return "T_S";
-        case T_ID:        return "T_ID";
-        case T_INT:       return "T_INT";
-        case T_STRING:    return "T_STRING";
+        case G_enum_tok_t::T_BREAK:     return "T_BREAK";
+        case G_enum_tok_t::T_ELSE:      return "T_ELSE";
+        case G_enum_tok_t::T_FOR:       return "T_FOR";
+        case G_enum_tok_t::T_FUNC:      return "T_FUNC";
+        case G_enum_tok_t::T_IF:        return "T_IF";
+        case G_enum_tok_t::T_RET:       return "T_RET";
+        case G_enum_tok_t::T_VAR:       return "T_VAR";
+        case G_enum_tok_t::T_ADD:       return "T_ADD";
+        case G_enum_tok_t::T_SUB:       return "T_SUB";
+        case G_enum_tok_t::T_MULT:      return "T_MULT";
+        case G_enum_tok_t::T_DIV:       return "T_DIV";
+        case G_enum_tok_t::T_MOD:       return "T_MOD";
+        case G_enum_tok_t::T_AND:       return "T_AND";
+        case G_enum_tok_t::T_OR:        return "T_OR";
+        case G_enum_tok_t::T_EE:        return "T_EE";
+        case G_enum_tok_t::T_LT:        return "T_LT";
+        case G_enum_tok_t::T_GT:        return "T_GT";
+        case G_enum_tok_t::T_EQ:        return "T_EQ";
+        case G_enum_tok_t::T_EMARK:     return "T_EMARK";
+        case G_enum_tok_t::T_NE:        return "T_NE";
+        case G_enum_tok_t::T_LE:        return "T_LE";
+        case G_enum_tok_t::T_GE:        return "T_GE";
+        case G_enum_tok_t::T_LP:        return "T_LP";
+        case G_enum_tok_t::T_RP:        return "T_RP";
+        case G_enum_tok_t::T_LC:        return "T_LC";
+        case G_enum_tok_t::T_RC:        return "T_RC";
+        case G_enum_tok_t::T_C:         return "T_C";
+        case G_enum_tok_t::T_S:         return "T_S";
+        case G_enum_tok_t::T_ID:        return "T_ID";
+        case G_enum_tok_t::T_INT:       return "T_INT";
+        case G_enum_tok_t::T_STRING:    return "T_STRING";
         default:          return "<bad token>";
       }
     }
 
 
-void MyFlexLexer::myUnput(const char * text) {
+void GoLF::Lexer::myUnput(const char * text) {
   int i;
   /* Copy yytext because unput() trashes yytext */
   char *yycopy = strdup( text );
@@ -157,7 +164,7 @@ void MyFlexLexer::myUnput(const char * text) {
   free( yycopy );
 }
 
-void MyFlexLexer::myUnput(const char * text, int si, int ei) {
+void GoLF::Lexer::myUnput(const char * text, int si, int ei) {
   if ((ei-si) <= (int) strlen(text)) {
     char* subtext = (char*) malloc((ei-si+1) * sizeof(char));
     strncpy(subtext, text + si, ei - si);
@@ -170,19 +177,19 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
 }
 
 // since method is after being prototype declared and called by lex, default argument must be declared on header file (also it is more consistent and clear for documentation)
-bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input) {
+bool GoLF::Lexer::handleImplicitSemicolon(std::string condition, std::string input) {
   // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
-  if (condition == "}") flag = lastToken != 0 && lastToken != T_S;
+  if (condition == "}") flag = lastToken != 0 && lastToken != G_enum_tok_t::T_S;
   else { // condition = \n or EOF
     switch(lastToken) {
-      case T_ID: flag = true;
-      case T_INT: flag = true;
-      case T_STRING: flag = true;
-      case T_BREAK: flag = true;
-      case T_RET: flag = true;
-      case T_RP: flag = true;
-      case T_RC: flag = true;
+      case G_enum_tok_t::T_ID: flag = true;
+      case G_enum_tok_t::T_INT: flag = true;
+      case G_enum_tok_t::T_STRING: flag = true;
+      case G_enum_tok_t::T_BREAK: flag = true;
+      case G_enum_tok_t::T_RET: flag = true;
+      case G_enum_tok_t::T_RP: flag = true;
+      case G_enum_tok_t::T_RC: flag = true;
       default: break;
     }
   }
@@ -223,7 +230,7 @@ std::string filterText(const char * text, int mylen) {
 
   return r;
 }
-void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
+void GoLF::Lexer::handleWarningUnknown(const char * text, int mylen) {
   if (++numWarnings < MAX_WARNINGS)  {
     std::cerr << "warning: skipping unknown character `" << filterText(text, mylen) << "`" << " at or near line " << myLineNo << std::endl;
   } else {
@@ -231,8 +238,8 @@ void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
     exit(EXIT_FAILURE);
   }
 }
-void MyFlexLexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
-void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
+void GoLF::Lexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
+void GoLF::Lexer::handleWarningSkip(const char * text, int mylen) {
   if (++numWarnings < MAX_WARNINGS)  {
     std::cerr << "warning: skipping " << filterText(text, mylen) << " character" << " at or near line " << myLineNo << std::endl;
   } else {
@@ -240,4 +247,4 @@ void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
     exit(EXIT_FAILURE);
   }
 }
-void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
+void GoLF::Lexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
