@@ -1,6 +1,6 @@
 %option noyywrap
 %option c++
-%option yyclass="MyFlexLexer"
+%option yyclass="GoLF::Lexer"
 %option yylineno
 %{
 #include"lex.h"
@@ -26,8 +26,8 @@ non_ascii_char [^\x00-\x7F]
 
 %%
 [ \t]+     {}
-\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
-<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return updateLastToken(T_S); return 0; }
+\n         { ++myLineNo; if (GoLF::Lexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
+<INITIAL><<EOF>>    { if (GoLF::Lexer::handleImplicitSemicolon("EOF")) return updateLastToken(T_S); return 0; }
 
 "+"        { return updateLastToken(T_ADD); }
 "-"        { return updateLastToken(T_SUB); }
@@ -52,7 +52,7 @@ non_ascii_char [^\x00-\x7F]
 ")"        { return updateLastToken(T_RP); }
 "{"        { return updateLastToken(T_LC); }
 "}"        { 
-            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
+            if (GoLF::Lexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
             return updateLastToken(T_RC); 
            }
 ","        { return updateLastToken(T_C); }
@@ -100,17 +100,17 @@ G_enum_tok_t updateLastToken(G_enum_tok_t const tok) {
 }
 
 // prototypes for functions/methods below are already defined in header file
-MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
+GoLF::Lexer::Lexer(std::istream& istream, std::ostream& ostream)
     : yyFlexLexer(istream, ostream), myLineNo{1}
 {
 }
 
-std::string MyFlexLexer::getAttribute() {
+std::string GoLF::Lexer::getAttribute() {
   // something yyleng < strlen(text) when using unput. Thus, this way is better
   return std::string(YYText(), YYLeng());
 }
 
-char const* MyFlexLexer::tokenToString(G_enum_tok_t const tok) {
+char const* GoLF::Lexer::tokenToString(G_enum_tok_t const tok) {
       switch (tok) {
         case T_BREAK:     return "T_BREAK";
         case T_ELSE:      return "T_ELSE";
@@ -148,7 +148,7 @@ char const* MyFlexLexer::tokenToString(G_enum_tok_t const tok) {
     }
 
 
-void MyFlexLexer::myUnput(const char * text) {
+void GoLF::Lexer::myUnput(const char * text) {
   int i;
   /* Copy yytext because unput() trashes yytext */
   char *yycopy = strdup( text );
@@ -157,7 +157,7 @@ void MyFlexLexer::myUnput(const char * text) {
   free( yycopy );
 }
 
-void MyFlexLexer::myUnput(const char * text, int si, int ei) {
+void GoLF::Lexer::myUnput(const char * text, int si, int ei) {
   if ((ei-si) <= (int) strlen(text)) {
     char* subtext = (char*) malloc((ei-si+1) * sizeof(char));
     strncpy(subtext, text + si, ei - si);
@@ -170,7 +170,7 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
 }
 
 // since method is after being prototype declared and called by lex, default argument must be declared on header file (also it is more consistent and clear for documentation)
-bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input) {
+bool GoLF::Lexer::handleImplicitSemicolon(std::string condition, std::string input) {
   // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
   if (condition == "}") flag = lastToken != 0 && lastToken != T_S;
@@ -223,7 +223,7 @@ std::string filterText(const char * text, int mylen) {
 
   return r;
 }
-void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
+void GoLF::Lexer::handleWarningUnknown(const char * text, int mylen) {
   if (++numWarnings < MAX_WARNINGS)  {
     std::cerr << "warning: skipping unknown character `" << filterText(text, mylen) << "`" << " at or near line " << myLineNo << std::endl;
   } else {
@@ -231,8 +231,8 @@ void MyFlexLexer::handleWarningUnknown(const char * text, int mylen) {
     exit(EXIT_FAILURE);
   }
 }
-void MyFlexLexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
-void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
+void GoLF::Lexer::handleWarningUnknown(const char * text) { handleWarningUnknown(text, strlen(text)); }
+void GoLF::Lexer::handleWarningSkip(const char * text, int mylen) {
   if (++numWarnings < MAX_WARNINGS)  {
     std::cerr << "warning: skipping " << filterText(text, mylen) << " character" << " at or near line " << myLineNo << std::endl;
   } else {
@@ -240,4 +240,4 @@ void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
     exit(EXIT_FAILURE);
   }
 }
-void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
+void GoLF::Lexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }

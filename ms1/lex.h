@@ -55,22 +55,24 @@ enum Token : int
 // although this would be never needed. Reason: lexer will always update it before returning value to yylex(). So lasttoken will always be == current returned token
 extern G_enum_tok_t lastToken; // the LEXER must update the lasttoken. since this header file may be imported by multiple files it is best to make it external var to avoid conflicts
 
-class MyFlexLexer : public yyFlexLexer
-{
-public:
-  int myLineNo;
+namespace GoLF {
+  class Lexer : public yyFlexLexer
+  {
+  public:
+    int myLineNo;
 
-  MyFlexLexer(std::istream &istream, std::ostream &ostream);
+    Lexer(std::istream &istream, std::ostream &ostream);
 
-  int yylex();
-  
-  std::string getAttribute();
-  static char const *tokenToString(G_enum_tok_t const);
-  void myUnput(const char * text);
-  void myUnput(const char * text, int si, int ei);
-  bool handleImplicitSemicolon(std::string condition, std::string input = ""); // default arg declared here in header file
-  void handleWarningUnknown(const char * text);
-  void handleWarningUnknown(const char * text, int mylen);
-  void handleWarningSkip(const char * text);
-  void handleWarningSkip(const char * text, int mylen);
-};
+    int yylex();
+    
+    std::string getAttribute();
+    static char const *tokenToString(G_enum_tok_t const);
+    void myUnput(const char * text);
+    void myUnput(const char * text, int si, int ei);
+    bool handleImplicitSemicolon(std::string condition, std::string input = ""); // default arg declared here in header file
+    void handleWarningUnknown(const char * text);
+    void handleWarningUnknown(const char * text, int mylen);
+    void handleWarningSkip(const char * text);
+    void handleWarningSkip(const char * text, int mylen);
+  };
+}
