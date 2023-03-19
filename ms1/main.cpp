@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   while ((tk = lexer.yylex()) != 0)
   {
     std::cout
-        << "Token `" << MyFlexLexer::tokenToString(static_cast<MyFlexLexer::Token>(tk))
+        << "Token `" << MyFlexLexer::tokenToString(static_cast<G_enum_tok_t>(tk))
         << "` with attribute `"
         << lexer.getAttribute()
         << "`"
@@ -37,10 +37,6 @@ int main(int argc, char **argv)
         // << lexer.lineno() // same value as below
         << lexer.myLineNo
         << "\n";
-
-    // update last token
-    // std::cout << "\t\tlast token was " << MyFlexLexer::tokenToString(lexer.lastToken) << std::endl;
-    lexer.lastToken = (MyFlexLexer::Token)tk;
   }
   return EXIT_SUCCESS;
 }

@@ -7,18 +7,110 @@
 #include<cstdlib>
 #include<ctype.h>
 #include<string.h>
+#include"global.h"
+
+/* last token MUST BE UPDATED IN LEXER ONLY. Otherwise if, for instance, this lex file is used by parser, parser won't be updating it */
+// lastToken global var is defined here (so no conflicts since defined only in one place)
+G_enum_tok_t lastToken = (G_enum_tok_t) 0; // default last token value: semicolon should not affect program
+G_enum_tok_t updateLastToken(G_enum_tok_t const tok); // prototypes in lex declarations
+
+%}
+
+alph [a-zA-Z]
+alphNum [a-zA-Z0-9]
+
+non_ascii_char [^\x00-\x7F]
+
+%x STRING
+%x COMMENT
+
+%%
+[ \t]+     {}
+\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);}
+<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return updateLastToken(T_S); return 0; }
+
+"+"        { return updateLastToken(T_ADD); }
+"-"        { return updateLastToken(T_SUB); }
+"*"        { return updateLastToken(T_MULT); }
+"/"        { return updateLastToken(T_DIV); }
+"%"        { return updateLastToken(T_MOD); }
+
+"&&"        { return updateLastToken(T_AND); }
+"||"        { return updateLastToken(T_OR); }
+
+"=="        { return updateLastToken(T_EE); }
+"<"        { return updateLastToken(T_LT); }
+">"        { return updateLastToken(T_GT); }
+"="        { return updateLastToken(T_EQ); }
+"!"        { return updateLastToken(T_EMARK); }
+
+"!="        { return updateLastToken(T_NE); }
+"<="        { return updateLastToken(T_LE); }
+">="        { return updateLastToken(T_GE); }
+
+"("        { return updateLastToken(T_LP); }
+")"        { return updateLastToken(T_RP); }
+"{"        { return updateLastToken(T_LC); }
+"}"        { 
+            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return updateLastToken(T_S);
+            return updateLastToken(T_RC); 
+           }
+","        { return updateLastToken(T_C); }
+";"        { return updateLastToken(T_S); }
+
+break      { return updateLastToken(T_BREAK); }
+else      { return updateLastToken(T_ELSE); }
+for      { return updateLastToken(T_FOR); }
+func      { return updateLastToken(T_FUNC); }
+if      { return updateLastToken(T_IF); }
+return      { return updateLastToken(T_RET); }
+var      { return updateLastToken(T_VAR); }
+
+"//"                                  { BEGIN(COMMENT); }
+<COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
+<COMMENT>.                            { }
+
+({alph}|_)(({alphNum}|_)*)  { return updateLastToken(T_ID); } // identifier
+[0-9][0-9]*         { return updateLastToken(T_INT); }   // int literal
 
 
+\"                                    { BEGIN(STRING); yymore(); }
+<STRING>\"                            { BEGIN(INITIAL); return updateLastToken(T_STRING); }
+<STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
+<STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING><<EOF>>                       {std::cerr << "error: string [" << yytext << "] terminated by EOF at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE);} // TODO: yytext is empty on EOF
+<STRING>\\.                           { std::cerr << "error: bad string escape '" << yytext[yyleng-1] << "' at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+<STRING>.                             { yymore(); } // everything else is valid, including _?!''
+
+"&"          { std::cerr << "error: bitwise AND not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+"|"          { std::cerr << "error: bitwise OR not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
+\0         { handleWarningSkip("NUL"); }
+{non_ascii_char} { handleWarningSkip("non-ASCII input"); }
+.          { handleWarningUnknown(yytext, yyleng); }
+%%
+/* here all functions that were prototypes before or above are now defined here */
+
+
+G_enum_tok_t updateLastToken(G_enum_tok_t const tok) {
+  // update token and return same token
+  lastToken = tok;
+  return tok;
+}
+
+// prototypes for functions/methods below are already defined in header file
 MyFlexLexer::MyFlexLexer(std::istream& istream, std::ostream& ostream)
     : yyFlexLexer(istream, ostream), myLineNo{1}
 {
 }
 
 std::string MyFlexLexer::getAttribute() {
+  // something yyleng < strlen(text) when using unput. Thus, this way is better
   return std::string(YYText(), YYLeng());
 }
 
-char const* MyFlexLexer::tokenToString(Token const tok) {
+char const* MyFlexLexer::tokenToString(G_enum_tok_t const tok) {
       switch (tok) {
         case T_BREAK:     return "T_BREAK";
         case T_ELSE:      return "T_ELSE";
@@ -76,12 +168,14 @@ void MyFlexLexer::myUnput(const char * text, int si, int ei) {
   exit(EXIT_FAILURE);
 
 }
-bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input = "") {
+
+// since method is after being prototype declared and called by lex, default argument must be declared on header file (also it is more consistent and clear for documentation)
+bool MyFlexLexer::handleImplicitSemicolon(std::string condition, std::string input) {
   // std::cout << "\t\tDEBUG: handleimplicit called on condition {" << condition << "}" << std::endl;
   bool flag = false;
-  if (condition == "}") flag = MyFlexLexer::lastToken != 0 && MyFlexLexer::lastToken != MyFlexLexer::T_S;
+  if (condition == "}") flag = lastToken != 0 && lastToken != T_S;
   else { // condition = \n or EOF
-    switch(MyFlexLexer::lastToken) {
+    switch(lastToken) {
       case T_ID: flag = true;
       case T_INT: flag = true;
       case T_STRING: flag = true;
@@ -147,79 +241,3 @@ void MyFlexLexer::handleWarningSkip(const char * text, int mylen) {
   }
 }
 void MyFlexLexer::handleWarningSkip(const char * text) { handleWarningSkip(text, strlen(text)); }
-%}
-
-alph [a-zA-Z]
-alphNum [a-zA-Z0-9]
-
-non_ascii_char [^\x00-\x7F]
-
-%x STRING
-%x COMMENT
-
-%%
-[ \t]+     {}
-\n         { ++myLineNo; if (MyFlexLexer::handleImplicitSemicolon("\n", yytext)) return MyFlexLexer::T_S;}
-<INITIAL><<EOF>>    { if (MyFlexLexer::handleImplicitSemicolon("EOF")) return MyFlexLexer::T_S; return 0; }
-
-"+"        { return MyFlexLexer::T_ADD; }
-"-"        { return MyFlexLexer::T_SUB; }
-"*"        { return MyFlexLexer::T_MULT; }
-"/"        { return MyFlexLexer::T_DIV; }
-"%"        { return MyFlexLexer::T_MOD; }
-
-"&&"        { return MyFlexLexer::T_AND; }
-"||"        { return MyFlexLexer::T_OR; }
-
-"=="        { return MyFlexLexer::T_EE; }
-"<"        { return MyFlexLexer::T_LT; }
-">"        { return MyFlexLexer::T_GT; }
-"="        { return MyFlexLexer::T_EQ; }
-"!"        { return MyFlexLexer::T_EMARK; }
-
-"!="        { return MyFlexLexer::T_NE; }
-"<="        { return MyFlexLexer::T_LE; }
-">="        { return MyFlexLexer::T_GE; }
-
-"("        { return MyFlexLexer::T_LP; }
-")"        { return MyFlexLexer::T_RP; }
-"{"        { return MyFlexLexer::T_LC; }
-"}"        { 
-            if (MyFlexLexer::handleImplicitSemicolon("}", yytext)) return MyFlexLexer::T_S;
-            return MyFlexLexer::T_RC; 
-           }
-","        { return MyFlexLexer::T_C; }
-";"        { return MyFlexLexer::T_S; }
-
-break      { return MyFlexLexer::T_BREAK; }
-else      { return MyFlexLexer::T_ELSE; }
-for      { return MyFlexLexer::T_FOR; }
-func      { return MyFlexLexer::T_FUNC; }
-if      { return MyFlexLexer::T_IF; }
-return      { return MyFlexLexer::T_RET; }
-var      { return MyFlexLexer::T_VAR; }
-
-"//"                                  { BEGIN(COMMENT); }
-<COMMENT>{non_ascii_char}             { std::cerr << "error: comment contains non-7bit asci char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-<COMMENT>\n                           { myLineNo++; BEGIN(INITIAL);}
-<COMMENT>.                            { }
-
-({alph}|_)(({alphNum}|_)*)  { return MyFlexLexer::T_ID; } // identifier
-[0-9][0-9]*         { return MyFlexLexer::T_INT; }   // int literal
-
-
-\"                                    { BEGIN(STRING); yymore(); }
-<STRING>\"                            { BEGIN(INITIAL); return MyFlexLexer::T_STRING; }
-<STRING>\n                            { std::cerr << "error: string [" << std::string(yytext).substr(0, yyleng-1) << "] terminated by newline at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-<STRING>\b|\\b|\f|\\f|\\n|\r|\\r|\t|\\t|\\\\|\\\"           { yymore(); }
-<STRING>{non_ascii_char}              { std::cerr << "error: string contain non-7-bit ascii_char at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-<STRING><<EOF>>                       {std::cerr << "error: string [" << yytext << "] terminated by EOF at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE);} // TODO: yytext is empty on EOF
-<STRING>\\.                           { std::cerr << "error: bad string escape '" << yytext[yyleng-1] << "' at or near line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-<STRING>.                             { yymore(); } // everything else is valid, including _?!''
-
-"&"          { std::cerr << "error: bitwise AND not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-"|"          { std::cerr << "error: bitwise OR not supported in GoLF near or at line " << myLineNo << std::endl; exit(EXIT_FAILURE); }
-\0         { handleWarningSkip("NUL"); }
-{non_ascii_char} { handleWarningSkip("non-ASCII input"); }
-.          { handleWarningUnknown(yytext, yyleng); }
-%%
