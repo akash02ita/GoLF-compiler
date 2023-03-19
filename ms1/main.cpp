@@ -23,13 +23,13 @@ int main(int argc, char **argv)
     input = &file;
   }
 
-  class MyFlexLexer lexer = MyFlexLexer{*input, std::cout};
+  class GoLF::Lexer lexer = GoLF::Lexer{*input, std::cout};
 
   int tk;
   while ((tk = lexer.yylex()) != 0)
   {
     std::cout
-        << "Token `" << MyFlexLexer::tokenToString(static_cast<G_enum_tok_t>(tk))
+        << "Token `" << GoLF::Lexer::tokenToString(static_cast<G_enum_tok_t>(tk))
         << "` with attribute `"
         << lexer.getAttribute()
         << "`"

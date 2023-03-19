@@ -2,7 +2,12 @@
 
 #include <iostream>
 #include <string>
+
 #include "global.h"
+#if MODE == PARSER_MODE
+  #include <memory>
+#endif
+
 
 #if MODE == SCANNER_MODE
 // best to keep it outside class (stays consistent with C) and allows to easily cast G_enum_tok_t in main.cpp
@@ -47,30 +52,41 @@ enum Token : int
   T_STRING
 };
 #elif MODE == PARSER_MODE
-// include dependencies for parser code (bison header generated file)
-#include "parse.tab.h" // this let's compiler know where G_enum_tok_t is coming from
+  // include dependencies for parser code (bison header generated file)
+  #include "parse.tab.h" // this let's compiler know where G_enum_tok_t is coming from
+  #include "location.hh"
+  #if !defined(yyFlexLexerOnce)
+  #include <FlexLexer.h>
+  #endif
 #endif
 
 // extern keywoards not allowed inside c++ class. lastToken is defined here to allow any other program to access or print it for DEBUGGING
 // although this would be never needed. Reason: lexer will always update it before returning value to yylex(). So lasttoken will always be == current returned token
 extern G_enum_tok_t lastToken; // the LEXER must update the lasttoken. since this header file may be imported by multiple files it is best to make it external var to avoid conflicts
 
-class MyFlexLexer : public yyFlexLexer
-{
-public:
-  int myLineNo;
+namespace GoLF {
+  class Lexer : public yyFlexLexer
+  {
+  public:
+    int myLineNo;
 
-  MyFlexLexer(std::istream &istream, std::ostream &ostream);
+    Lexer(std::istream &istream, std::ostream &ostream);
 
-  int yylex();
-  
-  std::string getAttribute();
-  static char const *tokenToString(G_enum_tok_t const);
-  void myUnput(const char * text);
-  void myUnput(const char * text, int si, int ei);
-  bool handleImplicitSemicolon(std::string condition, std::string input = ""); // default arg declared here in header file
-  void handleWarningUnknown(const char * text);
-  void handleWarningUnknown(const char * text, int mylen);
-  void handleWarningSkip(const char * text);
-  void handleWarningSkip(const char * text, int mylen);
-};
+#if MODE == SCANNER_MODE
+    int yylex();
+#elif MODE == PARSER_MODE
+    virtual ~Lexer() = default;
+    virtual int yylex(GoLF::Parser::semantic_type *yylval, GoLF::Parser::location_type *location);
+#endif
+
+    std::string getAttribute();
+    static char const *tokenToString(G_enum_tok_t const);
+    void myUnput(const char * text);
+    void myUnput(const char * text, int si, int ei);
+    bool handleImplicitSemicolon(std::string condition, std::string input = ""); // default arg declared here in header file
+    void handleWarningUnknown(const char * text);
+    void handleWarningUnknown(const char * text, int mylen);
+    void handleWarningSkip(const char * text);
+    void handleWarningSkip(const char * text, int mylen);
+  };
+}
