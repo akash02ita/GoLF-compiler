@@ -28,6 +28,8 @@ const char* opToString(Oper op)
     case GTE:       return ">=";
     case EQ:        return "==";
     case NEQ:       return "!=";
+    case EMARK:     return "!";
+    case EQEQ:      return "==";
     default:        return "";
     }
 }
@@ -406,7 +408,7 @@ ASTNode* newBlockStmt(ASTNode* stmt)
     for (int i = 0; i < MAX_CHILDREN; i++) node->children[i] = NULL;
     node->next = NULL;
     node->node_type = Expr;
-    node->kind.exp = UnaryExp;
+    node->kind.exp = BinaryExp; // UnaryExp; // bug?: should it be rather BinaryExp?
     node->line = line;
     node->val.op = op;
     node->children[0] = left;

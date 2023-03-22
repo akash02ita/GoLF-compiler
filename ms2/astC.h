@@ -6,6 +6,12 @@
  * 2020
  ********************************/
 
+/* https://github.com/llvm/llvm-project/issues/55274
+   all the code could also be defined inline in header file without compiling.
+   However, when using `gcc` prefix `extern inline` is needed (not just inline).
+   using `static` might also work.
+*/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -16,7 +22,7 @@ typedef enum
 {
     ADD, SUB, MULT, DIV, MOD,
     LT, GT, LTE, GTE, EQ, NEQ,
-    AND, OR
+    AND, OR, EMARK, EQEQ
 } Oper;
 
 typedef enum 
