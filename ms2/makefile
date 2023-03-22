@@ -3,7 +3,7 @@
 
 CC=gcc
 CFLAGS=-g -Wall
-OBJ=main.o parse.tab.o lex.yy.o # ast.o
+OBJ=main.o parse.tab.o lex.yy.o astC.o
 YACC=bison
 YFLAGS=-Wall -d
 LEX=flex
@@ -13,14 +13,14 @@ golf: $(OBJ)
 	$(CC) $(CFLAGS) -o golf $^
 	cp golf tests
 
-main.o: main.c parse.tab.h # ast.h
+main.o: main.c parse.tab.h astC.h
 
-# ast.o: ast.c ast.h
+astC.o: astC.c astC.h
 
 lex.yy.c: lex.l parse.tab.h
 	$(LEX) $(LFLAGS) $<
 
-parse.tab.c parse.tab.h: parse.y # ast.h
+parse.tab.c parse.tab.h: parse.y astC.h
 	$(YACC) $(YFLAGS) $<
 
 clean:
