@@ -1,6 +1,6 @@
 %{
     #include <stdio.h>
-
+    #include "astC.h"
     int yylex(void);
     void yyerror(char * err);
 
@@ -125,7 +125,8 @@ PrimaryExpr : Operand | PrimaryExpr Arguments
 Operand : Literal | OperandName | T_LP Expression T_RP
 OperandName : identifier
 Literal : BasicLit
-BasicLit : int_lit | string_lit
+BasicLit : int_lit               { $$ = newIntBasicLit(123, 0); }
+         | string_lit            { $$ = newStrBasicLit("abc", 0); }
 
 Arguments : T_LP T_RP
           | T_LP ExpressionList T_RP
