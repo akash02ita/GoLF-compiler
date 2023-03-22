@@ -97,6 +97,12 @@ var      { return updateLastToken(T_VAR); }
 %%
 
 yytoken_kind_t updateLastToken(yytoken_kind_t const tok) {
+
+  // update only here to avoid redundancy
+  yylloc.first_line = yylineno;
+  yylloc.last_line = yylineno;
+  yylval.string = strdup(yytext);
+
   lastToken = tok;
   return tok;
 }
