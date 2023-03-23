@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include "astC.h"
 
+ASTNode * progTree;
+
 const char* opToString(Oper op)
 {
     switch (op) 

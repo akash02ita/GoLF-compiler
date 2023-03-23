@@ -63,6 +63,7 @@ typedef struct ASTNode
 
 }ASTNode;
 
+extern ASTNode * progTree;
 
 const char* opToString(Oper op);
 
