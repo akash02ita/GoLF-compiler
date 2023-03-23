@@ -37,4 +37,5 @@ int main(int argc, char** argv) {
     if (yyparse() != 0) {
         return EXIT_FAILURE;
     }
+    printTree(progTree, stdout, 1);
 }
