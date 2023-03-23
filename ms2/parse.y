@@ -20,7 +20,8 @@
 
 
 
-%start prog
+// %start prog
+%start Expression
 %type <node> prog SourceFile TopLevelDecl Declaration VarDecl VarSpec FunctionDecl FunctionName FunctionBody Block Statement Signature Result Type TypeName Parameters ParameterList ParameterDecl SimpleStmt ExpressionStmt Assignment ReturnStmt BreakStmt IfStmt ForStmt Condition Expression pl2expr pl3expr pl4expr pl5expr pl6expr UnaryExpr PrimaryExpr Operand OperandName Literal BasicLit Arguments ExpressionList int_lit string_lit identifier
 %type <node> StatementList EmptyStmt
 %type <op> or_op and_op rel_op add_op mul_op unary_op
@@ -80,7 +81,7 @@ IfStmt : T_IF Expression Block | T_IF Expression Block T_ELSE IfStmt | T_IF Expr
 ForStmt : T_FOR Block | T_FOR Condition Block
 
 Condition : Expression
-Expression : pl2expr 
+Expression : pl2expr                    { printTree($1, stdout, 1); printf("test test\n"); }
            | Expression or_op pl2expr   { $$ = newBinExp($2, $1, $3, @$.first_line); } // or "||" has lowest precedence (precedence level 1 operator)
     pl2expr : pl3expr 
             | pl2expr and_op pl3expr    { $$ = newBinExp($2, $1, $3, @$.first_line); } // precedence level2 expression (the larger the precedene number the higher the priority to evaluate that expression first)
@@ -116,16 +117,26 @@ PrimaryExpr : Operand
 
 Operand : Literal
         | OperandName
-        | T_LP Expression T_RP    { $$ = newActual($2);  } // ??????????
+        | T_LP Expression T_RP   { $$ = $2; } // { $$ = newActual($2);  } // ??????????
 OperandName : identifier
 Literal : BasicLit
-BasicLit : int_lit
-         | string_lit
+BasicLit : int_lit  // { fprintf(stdout, "intlit %d\n", $1->val.ival); }
+         | string_lit  // { fprintf(stdout, "strlit %s\n", $1->val.sval); }
 
-Arguments : T_LP T_RP
-          | T_LP ExpressionList T_RP
-          | T_LP ExpressionList T_C T_RP
-ExpressionList : Expression | ExpressionList T_C Expression
+Arguments : T_LP T_RP { $$ = newActual(NULL);}
+          | T_LP ExpressionList T_RP { $$ = newActual($2); } // TODO: reverse $2 linked list
+          | T_LP ExpressionList T_C T_RP { $$ = newActual($2);} // TODO: reverse $2 linked list
+ExpressionList : Expression
+               | ExpressionList T_C Expression { 
+                // To follow proper order append(ExpressionList) = Expression
+                    // while temp.next != null. temp = temp.next
+                    // temp.next = Expression
+                // But that is o(n^2) time complexity  (every time you append you need to recursive through whole thing)
+                // idea: Expression.next = ExpressionList (Expression is already evaluated) (So rather `prepend` and reverse later)
+                // then reverse whereever expressionlist is used (in Arguments)
+                $3->next = $1;
+                $$ = $2;
+                } 
 
 int_lit : T_INT                 { $$ = newIntBasicLit(atoi($1), @$.first_line); }
 string_lit : T_STRING           { $$ = newStrBasicLit($1, @$.first_line); }
