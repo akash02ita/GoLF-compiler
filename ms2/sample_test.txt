@@ -1,0 +1,9 @@
+func main() {
+    for true {
+        abc = 1
+        abcd = 3;
+//        for false {
+//            
+//        }
+    }
+}

@@ -42,16 +42,27 @@ FunctionDecl : T_FUNC FunctionName Signature FunctionBody
 FunctionName : identifier
 FunctionBody : Block
 
-Block : T_LC StatementList T_RC
-StatementList : %empty  {$$ = "";} // this is to avoid %type <string> StatementList 'empty warning'
-              | StatementList Statement T_S
-Statement : Declaration
-          | SimpleStmt
-          | ReturnStmt 
-          | BreakStmt 
-          | Block  
-          | IfStmt   
-          | ForStmt
+// version1 of Block: works
+// %empty calls multiple times. if you remove revLinkedList and replac $$ = NULL to like $$ = newId("hello"), hello will be shown multiple times. (tested with for loop example)
+// Block : T_LC StatementList T_RC                 { $$ = newBlockStmt(revLinkedList($2)); }// statementlist only used and belongs to block: reverse linked list here for efficiency
+// StatementList : %empty                          { $$ = NULL; }  // { $$ = newId("hello"); }         //  newblock with no statement (newBlockNoStmt();). If grammar was Block: ( nonemptyStatementList ) and Block : () then newblocknostmt would be used. Here we don't need to. see other version
+//               | StatementList Statement T_S     { if ($2 == NULL) fprintf(stderr, "Error:StatementList: Statement is null\n");
+//                                                   $2->next = $1; $$ = $2;
+//                                                 } // block with statement: NOTE prepend for efficiency $2 = newblokc($1)
+
+// version 2 of Block: works but looks better (%empty on version1 triggers multiple times. although $$=NULL should not cause issues.)
+Block : T_LC T_RC                            { $$ = newBlockNoStmt(); }
+      | T_LC StatementList T_RC              { $$ = newBlockStmt(revLinkedList($2)); }
+StatementList : Statement T_S                { $$ = $1; }
+              | StatementList Statement T_S  { $2->next = $1; $$ = $2;}
+
+Statement : Declaration                         { $$ = newIdLine("Declaration", @$.first_line); } // for now create a dummy nodes only.
+          | SimpleStmt                          { $$ = newIdLine("SimpleStmt", @$.first_line); } // for now create a dummy nodes only.
+          | ReturnStmt                          { $$ = newIdLine("ReturnStmt", @$.first_line); } // for now create a dummy nodes only.
+          | BreakStmt                           { $$ = newIdLine("BreakStmt", @$.first_line); } // for now create a dummy nodes only.
+          | Block                           // { $$ = $1; } // this is default action
+          | IfStmt                          { $$ = newBlockNoStmt(); } // for now create a dummy block only.
+          | ForStmt                         // { $$ = $1; }
           
 Signature : Parameters | Parameters Result
 Result : Type
@@ -77,11 +88,14 @@ EmptyStmt : %empty {$$ = ""; } // this is to avoid %type <string> EmptyStmt '%em
 ReturnStmt : T_RET
            | T_RET Expression
 BreakStmt : T_BREAK
-IfStmt : T_IF Expression Block | T_IF Expression Block T_ELSE IfStmt | T_IF Expression Block T_ELSE Block
-ForStmt : T_FOR Block | T_FOR Condition Block
+IfStmt : T_IF Expression Block                                 // if statement
+       | T_IF Expression Block T_ELSE IfStmt                   // if else statement (recursive)
+       | T_IF Expression Block T_ELSE Block                    // if else statement
+ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); progTree = $$; }// condition = NULL, body = block
+        | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); progTree = $$; } // condition = condition, body = block
 
 Condition : Expression
-Expression : pl2expr                    { progTree = $1; }
+Expression : pl2expr                    // default action:{ $$ = $1; }
            | Expression or_op pl2expr   { $$ = newBinExp($2, $1, $3, @$.first_line); } // or "||" has lowest precedence (precedence level 1 operator)
     pl2expr : pl3expr 
             | pl2expr and_op pl3expr    { $$ = newBinExp($2, $1, $3, @$.first_line); } // precedence level2 expression (the larger the precedene number the higher the priority to evaluate that expression first)

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "lex.h"
 
-#define ALLOW_STDIN
+// #define ALLOW_STDIN
 
 int yylex();
 int main(int argc, char** argv) {
