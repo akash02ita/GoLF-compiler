@@ -32,7 +32,7 @@ prog    : SourceFile
 SourceFile	: %empty {$$ = ""; } // do not print anything for now
 			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
 
-TopLevelDecl : Declaration | FunctionDecl
+TopLevelDecl : Declaration | FunctionDecl // TODO: Declaration is is a `global var` declartion.
 Declaration : VarDecl
 VarDecl : T_VAR VarSpec 
 VarSpec : identifier Type
@@ -57,7 +57,7 @@ StatementList : Statement T_S                { $$ = $1; }
               | StatementList Statement T_S  { $2->next = $1; $$ = $2;}
 
 Statement : Declaration                         { $$ = newIdLine("Declaration", @$.first_line); } // for now create a dummy nodes only.
-          | SimpleStmt                          { $$ = newIdLine("SimpleStmt", @$.first_line); } // for now create a dummy nodes only.
+          | SimpleStmt                      // { $$ = $1; }
           | ReturnStmt                      // { $$ = $1; }
           | BreakStmt                       // { $$ = $1; }
           | Block                           // { $$ = $1; } // this is default action
@@ -80,17 +80,17 @@ SimpleStmt : EmptyStmt
            | ExpressionStmt
            | Assignment
 
-ExpressionStmt : Expression
+ExpressionStmt : Expression                     { $$ = newExprStmt($1); }
 Assignment : Expression assign_op Expression    { $$ = newAssnStmt($1, $3, @$.first_line); }
-assign_op : T_EQ    { $$ = EQ; }
+assign_op : T_EQ                                { $$ = EQ; }
 
-EmptyStmt : %empty {$$ = ""; } // this is to avoid %type <string> EmptyStmt '%empty warning'
-ReturnStmt : T_RET                              { $$ = newRetStmt(@$.first_line); progTree = $$; }
-           | T_RET Expression                   { $$ = newRetExprStmt($2, @$.first_line); progTree = $$; }
-BreakStmt : T_BREAK                             { $$ = newBrkStmt(@$.first_line); progTree = $$; }
-IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line);}              // if statement
-       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement (recursive)
-       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement
+EmptyStmt : %empty                              { $$ = newEmptyStmt(); }
+ReturnStmt : T_RET                              { $$ = newRetStmt(@$.first_line); }
+           | T_RET Expression                   { $$ = newRetExprStmt($2, @$.first_line); }
+BreakStmt : T_BREAK                             { $$ = newBrkStmt(@$.first_line); }
+IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line); progTree = $$; }              // if statement
+       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement (recursive)
+       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement
 ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); }// condition = NULL, body = block
         | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); } // condition = condition, body = block
 
