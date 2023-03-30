@@ -61,7 +61,7 @@ Statement : Declaration                         { $$ = newIdLine("Declaration", 
           | ReturnStmt                          { $$ = newIdLine("ReturnStmt", @$.first_line); } // for now create a dummy nodes only.
           | BreakStmt                           { $$ = newIdLine("BreakStmt", @$.first_line); } // for now create a dummy nodes only.
           | Block                           // { $$ = $1; } // this is default action
-          | IfStmt                          { $$ = newBlockNoStmt(); } // for now create a dummy block only.
+          | IfStmt                          // { $$ = $1; }
           | ForStmt                         // { $$ = $1; }
           
 Signature : Parameters | Parameters Result
@@ -88,11 +88,11 @@ EmptyStmt : %empty {$$ = ""; } // this is to avoid %type <string> EmptyStmt '%em
 ReturnStmt : T_RET
            | T_RET Expression
 BreakStmt : T_BREAK
-IfStmt : T_IF Expression Block                                 // if statement
-       | T_IF Expression Block T_ELSE IfStmt                   // if else statement (recursive)
-       | T_IF Expression Block T_ELSE Block                    // if else statement
-ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); progTree = $$; }// condition = NULL, body = block
-        | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); progTree = $$; } // condition = condition, body = block
+IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line); progTree = $$;}              // if statement
+       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement (recursive)
+       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement
+ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); }// condition = NULL, body = block
+        | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); } // condition = condition, body = block
 
 Condition : Expression
 Expression : pl2expr                    // default action:{ $$ = $1; }

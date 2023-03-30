@@ -693,10 +693,10 @@ ASTNode* newBlockStmt(ASTNode* stmt)
         
         INDENT++;
         for (int i = 0; i < MAX_CHILDREN; i++) {
-        if (tree->children[i] != NULL) printf("%*s__child%d\n", (INDENT-1)*4,"",i);
+        // if (tree->children[i] != NULL) printf("%*s__child%d\n", (INDENT-1)*4,"",i);
             printTree(tree->children[i], out, INDENT);}
         INDENT--;
-        printf("%*s__next\n", (INDENT)*4,"");
+        // printf("%*s__next\n", (INDENT)*4,"");
         tree = tree->next;
     }
 }
