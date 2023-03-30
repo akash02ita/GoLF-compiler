@@ -72,7 +72,7 @@ var      { return updateLastToken(T_VAR); }
 
 "//"                                  { BEGIN(COMMENT); }
 <COMMENT>{non_ascii_char}             { fprintf(stderr, "error: comment contains non-7bit asci char at or near line %d\n", yylineno); exit(EXIT_FAILURE); }
-<COMMENT>\n                           { BEGIN(INITIAL);}
+<COMMENT>\n                           { BEGIN(INITIAL); if (handleImplicitSemicolon("\n", yytext)) return updateLastToken(T_S);} // BUF FIX: forgot to handle implicit semicolon here
 <COMMENT>.                            { }
 
 ({alph}|_)(({alphNum}|_)*)  { return updateLastToken(T_ID); } // identifier
