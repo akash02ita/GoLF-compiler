@@ -6,19 +6,21 @@ func main() {
 //            
 //        }
 //    }
-    if testvar {
-        idblock = test
-        if test2var {
-
-        }
-        for true {
-
-        }
-    } else {
-        idelse = test
-        for elsetestfor {
-            abcd = 1
-            abcd = 2
-        }
-    }
+//    if testvar {
+//        idblock = test
+//        if test2var {
+//
+//        }
+//        for true {
+//
+//        }
+//    } else {
+//        idelse = test
+//        for elsetestfor {
+//            abcd = 1
+//            abcd = 2
+//        }
+//    }
+    break // placing comment should automaticlaly still put semicolon in break
+    return "hello world" // comment this line and break should appear
 }
