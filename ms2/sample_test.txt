@@ -1,9 +1,24 @@
 func main() {
-    for true {
-        abc = 1
-        abcd = 3;
+//    for true {
+//        abc = 1
+//        abcd = 3;
 //        for false {
 //            
 //        }
+//    }
+    if testvar {
+        idblock = test
+        if test2var {
+
+        }
+        for true {
+
+        }
+    } else {
+        idelse = test
+        for elsetestfor {
+            abcd = 1
+            abcd = 2
+        }
     }
 }
