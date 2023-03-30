@@ -58,8 +58,8 @@ StatementList : Statement T_S                { $$ = $1; }
 
 Statement : Declaration                         { $$ = newIdLine("Declaration", @$.first_line); } // for now create a dummy nodes only.
           | SimpleStmt                          { $$ = newIdLine("SimpleStmt", @$.first_line); } // for now create a dummy nodes only.
-          | ReturnStmt                          { $$ = newIdLine("ReturnStmt", @$.first_line); } // for now create a dummy nodes only.
-          | BreakStmt                           { $$ = newIdLine("BreakStmt", @$.first_line); } // for now create a dummy nodes only.
+          | ReturnStmt                      // { $$ = $1; }
+          | BreakStmt                       // { $$ = $1; }
           | Block                           // { $$ = $1; } // this is default action
           | IfStmt                          // { $$ = $1; }
           | ForStmt                         // { $$ = $1; }
@@ -85,12 +85,12 @@ Assignment : Expression assign_op Expression    { $$ = newAssnStmt($1, $3, @$.fi
 assign_op : T_EQ    { $$ = EQ; }
 
 EmptyStmt : %empty {$$ = ""; } // this is to avoid %type <string> EmptyStmt '%empty warning'
-ReturnStmt : T_RET
-           | T_RET Expression
-BreakStmt : T_BREAK
-IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line); progTree = $$;}              // if statement
-       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement (recursive)
-       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement
+ReturnStmt : T_RET                              { $$ = newRetStmt(@$.first_line); progTree = $$; }
+           | T_RET Expression                   { $$ = newRetExprStmt($2, @$.first_line); progTree = $$; }
+BreakStmt : T_BREAK                             { $$ = newBrkStmt(@$.first_line); progTree = $$; }
+IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line);}              // if statement
+       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement (recursive)
+       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement
 ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); }// condition = NULL, body = block
         | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); } // condition = condition, body = block
 
