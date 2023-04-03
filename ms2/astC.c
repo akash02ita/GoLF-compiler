@@ -451,7 +451,7 @@ ASTNode* newBlockStmt(ASTNode* stmt)
     for (int i = 0; i < MAX_CHILDREN; i++) node->children[i] = NULL;
     node->next = NULL;
     node->node_type = Expr;
-    node->kind.exp = FuncCall;
+    node->kind.exp = Actual; // bug fix: this should be actual not funccall
     node->children[0] = expr;
     return node;
 }

@@ -1,3 +1,4 @@
+var globalvar int
 func main() {
 //    for true {
 //        abc = 1
@@ -6,7 +7,9 @@ func main() {
 //            
 //        }
 //    }
+    var localvar int
     if testvar {
+        var tempvar int
         idblock = test
         if test2var {
             1+2
@@ -22,6 +25,8 @@ func main() {
             abcd = 2
         }
     }
+    testfunccall()
+    testfuncactuals(heloo, "hola", 123)
 //    break // placing comment should automaticlaly still put semicolon in break
 //    return "hello world" // comment this line and break should appear
 }
