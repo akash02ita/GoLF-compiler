@@ -32,7 +32,7 @@ prog    : SourceFile
 SourceFile	: %empty {$$ = ""; } // do not print anything for now
 			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
 
-TopLevelDecl : Declaration | FunctionDecl // TODO: Declaration is is a `global var` declartion.
+TopLevelDecl : Declaration | FunctionDecl // TODO: Declaration is is a `global var` declaration here.
 Declaration : VarDecl
 VarDecl : T_VAR VarSpec 
 VarSpec : identifier Type
@@ -56,7 +56,7 @@ Block : T_LC T_RC                            { $$ = newBlockNoStmt(); }
 StatementList : Statement T_S                { $$ = $1; }
               | StatementList Statement T_S  { $2->next = $1; $$ = $2;}
 
-Statement : Declaration                         { $$ = newIdLine("Declaration", @$.first_line); } // for now create a dummy nodes only.
+Statement : Declaration                     { $$ = newIdLine("Declaration", @$.first_line); } // TODO: newDeclStmt? or local var declaration?
           | SimpleStmt                      // { $$ = $1; }
           | ReturnStmt                      // { $$ = $1; }
           | BreakStmt                       // { $$ = $1; }
@@ -66,7 +66,7 @@ Statement : Declaration                         { $$ = newIdLine("Declaration", 
           
 Signature : Parameters | Parameters Result
 Result : Type
-Type : TypeName
+Type : TypeName                            { $$ = newTypeIdLine($1, @$.first_line); }
 TypeName : identifier
 
 Parameters  :  T_LP T_RP 
@@ -137,24 +137,11 @@ Literal : BasicLit
 BasicLit : int_lit  // { fprintf(stdout, "intlit %d\n", $1->val.ival); }
          | string_lit  // { fprintf(stdout, "strlit %s\n", $1->val.sval); }
 
-Arguments : T_LP T_RP { $$ = newActual(NULL);}
-          | T_LP ExpressionList T_RP { $$ = newActual(revLinkedList($2)); } // reverse $2 linked list
-          | T_LP ExpressionList T_C T_RP { $$ = newActual(revLinkedList($2));} //  reverse $2 linked list
-ExpressionList : Expression
-               | ExpressionList T_C Expression { 
-                    // To follow proper order append(ExpressionList) = Expression
-                        // while temp.next != null. temp = temp.next
-                        // temp.next = Expression
-                    // But that is o(n^2) time complexity  (every time you append you need to recursive through whole thing)
-                    // idea: Expression.next = ExpressionList (Expression is already evaluated) (So rather `prepend` and reverse later)
-                    // then reverse whereever expressionlist is used (in Arguments)
-                    if ($3->next != NULL) { // this should never happen
-                        fprintf(stderr, "Error:ExpressionList: Expression.next is NULL\n");
-                        exit(EXIT_FAILURE);
-                    }
-                    $3->next = $1;
-                    $$ = $3;
-                    } 
+Arguments : T_LP T_RP { $$ = newActuals();}
+          | T_LP ExpressionList T_RP { $$ = $2; }
+          | T_LP ExpressionList T_C T_RP { $$ = $2;}
+ExpressionList : Expression                    { $$ = newActuals(); addActual($$, $1); }
+               | ExpressionList T_C Expression { $$ = $1; addActual($$, $3); }
 
 int_lit : T_INT                 { $$ = newIntBasicLit(atoi($1), @$.first_line); }
 string_lit : T_STRING           { $$ = newStrBasicLit($1, @$.first_line); }
