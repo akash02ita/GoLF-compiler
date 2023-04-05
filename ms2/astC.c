@@ -497,6 +497,25 @@ ASTNode* newBlockStmt(ASTNode* stmt)
     return node;
 }
 
+ ASTNode* newGlobVarDecl(ASTNode* id, ASTNode* type, int line)
+{
+    ASTNode* node = (ASTNode *) malloc(sizeof(ASTNode));
+    if (node == NULL) 
+    {
+        fprintf(stderr, "Failed to create VarDecl node");
+        return node;
+    }
+
+    node->label = "GlobVarDecl;";
+    for (int i = 0; i < MAX_CHILDREN; i++) node->children[i] = NULL;
+    node->next = NULL;
+    node->node_type = Decl;
+    node->kind.decl = GlobVarDecl;
+    node->line = line;
+    node->children[0] = id;
+    node->children[1] = type;
+    return node;
+}
  ASTNode* newVarDecl(ASTNode* id, ASTNode* type, int line)
 {
     ASTNode* node = (ASTNode *) malloc(sizeof(ASTNode));
@@ -676,6 +695,9 @@ ASTNode* newBlockStmt(ASTNode* stmt)
                 {
                     case FuncDecl:
                     case VarDecl:
+                        fprintf(out, " Line: %d", tree->line);
+                        break;
+                    case GlobVarDecl:
                         fprintf(out, " Line: %d", tree->line);
                         break;
                     case ParamDecl:

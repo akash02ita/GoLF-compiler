@@ -22,7 +22,7 @@
 
 %start prog
 // %start Expression
-%type <node> prog SourceFile TopLevelDecl Declaration VarDecl VarSpec FunctionDecl FunctionName FunctionBody Block Statement Signature Result Type TypeName Parameters ParameterList ParameterDecl SimpleStmt ExpressionStmt Assignment ReturnStmt BreakStmt IfStmt ForStmt Condition Expression pl2expr pl3expr pl4expr pl5expr pl6expr UnaryExpr PrimaryExpr Operand OperandName Literal BasicLit Arguments ExpressionList int_lit string_lit identifier
+%type <node> prog SourceFile TopLevelDecl Declaration GlobarVarDeclaration FunctionDecl FunctionName FunctionBody Block Statement Signature Result Type TypeName Parameters ParameterList ParameterDecl SimpleStmt ExpressionStmt Assignment ReturnStmt BreakStmt IfStmt ForStmt Condition Expression pl2expr pl3expr pl4expr pl5expr pl6expr UnaryExpr PrimaryExpr Operand OperandName Literal BasicLit Arguments ExpressionList int_lit string_lit identifier
 %type <node> StatementList EmptyStmt
 %type <op> or_op and_op rel_op add_op mul_op unary_op
 %type <op> assign_op
@@ -32,10 +32,14 @@ prog    : SourceFile
 SourceFile	: %empty {$$ = ""; } // do not print anything for now
 			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
 
-TopLevelDecl : Declaration | FunctionDecl // TODO: Declaration is is a `global var` declaration here.
-Declaration : VarDecl
-VarDecl : T_VAR VarSpec 
-VarSpec : identifier Type
+TopLevelDecl : GlobarVarDeclaration             { $$ = $1; progTree = $$; }   // Declaration
+             | FunctionDecl                     // { $$ = $1; }
+
+GlobarVarDeclaration: T_VAR identifier Type     { $$ = newGlobVarDecl($2, $3, @$.first_line); }
+Declaration: T_VAR identifier Type              { $$ = newVarDecl($2, $3, @$.first_line); }
+// Declaration : VarDecl
+// VarDecl : T_VAR VarSpec 
+// VarSpec : identifier Type
 
 
 FunctionDecl : T_FUNC FunctionName Signature FunctionBody
@@ -66,8 +70,11 @@ Statement : Declaration                     { $$ = newIdLine("Declaration", @$.f
           
 Signature : Parameters | Parameters Result
 Result : Type
-Type : TypeName                            { $$ = newTypeIdLine($1, @$.first_line); }
-TypeName : identifier
+Type : T_ID                            { $$ = newTypeIdLine($1, @$.first_line); }
+// Type : TypeName                            { $$ = newTypeIdLine($1->val.sval, $1->line); } // works but incovenient
+// TypeName : identifier                      // { $$ = $1; }
+// Type : TypeName                            { $$ = newTypeIdLine($1, @$.first_line); } // does not work as $1 is a ASTNODE * and not char *
+// TypeName : identifier                      // { $$ = $1; }
 
 Parameters  :  T_LP T_RP 
             | T_LP ParameterList T_RP 
@@ -76,9 +83,9 @@ ParameterList : ParameterDecl
               | ParameterList T_C ParameterDecl
 ParameterDecl : identifier Type
 
-SimpleStmt : EmptyStmt
-           | ExpressionStmt
-           | Assignment
+SimpleStmt : EmptyStmt                          // { $$ = $1; }
+           | ExpressionStmt                     // { $$ = $1; }
+           | Assignment                         // { $$ = $1; }
 
 ExpressionStmt : Expression                     { $$ = newExprStmt($1); }
 Assignment : Expression assign_op Expression    { $$ = newAssnStmt($1, $3, @$.first_line); }
@@ -88,9 +95,9 @@ EmptyStmt : %empty                              { $$ = newEmptyStmt(); }
 ReturnStmt : T_RET                              { $$ = newRetStmt(@$.first_line); }
            | T_RET Expression                   { $$ = newRetExprStmt($2, @$.first_line); }
 BreakStmt : T_BREAK                             { $$ = newBrkStmt(@$.first_line); }
-IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line); progTree = $$; }              // if statement
-       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement (recursive)
-       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); progTree = $$; }      // if else statement
+IfStmt : T_IF Expression Block                         { $$  = newIfStmt($2, $3, @$.first_line); }              // if statement
+       | T_IF Expression Block T_ELSE IfStmt           { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement (recursive)
+       | T_IF Expression Block T_ELSE Block            { $$  = newIfElseStmt($2, $3, $5, @$.first_line); }      // if else statement
 ForStmt : T_FOR Block                    { $$ = newForStmt(NULL, $2, @$.first_line); }// condition = NULL, body = block
         | T_FOR Condition Block          { $$ = newForStmt($2, $3, @$.first_line); } // condition = condition, body = block
 
