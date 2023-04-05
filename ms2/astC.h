@@ -35,7 +35,7 @@ typedef enum {IfStmt, IfElseStmt, Block, Empty, Assn, For, ExprStmt, DeclStmt,
     BreakStmt, ReturnStmt} StmtType;
 
 typedef enum {Id, TypeId, BasicLit, UnaryExp, BinaryExp, FuncCall, Actual, Actuals} ExprType;
-typedef enum {FuncDecl, VarDecl, ParamDecl, Params, Signature} DeclType; // TODO: global var declaratoin type
+typedef enum {FuncDecl, VarDecl, GlobVarDecl, ParamDecl, Params, Signature} DeclType;
 
 typedef struct ASTNode 
 {
@@ -131,6 +131,8 @@ ASTNode* newActuals();
 // -------------------------------
 ASTNode* newFuncDecl(ASTNode* id, ASTNode* sig, ASTNode* body, int line);
 
+
+ASTNode* newGlobVarDecl(ASTNode* id, ASTNode* type, int line);
 ASTNode* newVarDecl(ASTNode* id, ASTNode* type, int line);
 
 ASTNode* newParamDecl(ASTNode *id, ASTNode* type);
