@@ -30,10 +30,10 @@
 
 prog    : SourceFile
 SourceFile	: %empty {$$ = ""; } // do not print anything for now
-			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added %s %s\n", $2, $3);}
+			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added a topleveldecl\n");}
 
-TopLevelDecl : GlobarVarDeclaration             { $$ = $1; progTree = $$; }   // Declaration
-             | FunctionDecl                     // { $$ = $1; }
+TopLevelDecl : GlobarVarDeclaration             // { $$ = $1; }   // Declaration
+             | FunctionDecl                     { $$ = $1; progTree = $$; }
 
 GlobarVarDeclaration: T_VAR identifier Type     { $$ = newGlobVarDecl($2, $3, @$.first_line); }
 Declaration: T_VAR identifier Type              { $$ = newVarDecl($2, $3, @$.first_line); }
@@ -42,9 +42,20 @@ Declaration: T_VAR identifier Type              { $$ = newVarDecl($2, $3, @$.fir
 // VarSpec : identifier Type
 
 
-FunctionDecl : T_FUNC FunctionName Signature FunctionBody
-FunctionName : identifier
-FunctionBody : Block
+FunctionDecl : T_FUNC FunctionName Signature FunctionBody  { $$ = newFuncDecl($2, $3, $4, @$.first_line); }
+FunctionName : identifier   // { $$ = $1; }
+FunctionBody : Block        // { $$ = $1; }
+
+Signature : Parameters          { ASTNode * type = newTypeIdLine("void", @$.first_line); $$ = newSignature(type, $1); }
+          | Parameters Result   { $$ = newSignature($2, $1); }
+Result : Type                // { $$ = $1; }
+
+Parameters  :  T_LP T_RP                            { $$ = newParams(); }
+            | T_LP ParameterList T_RP               { $$ = $2; }
+            | T_LP ParameterList T_C T_RP           { $$ = $2; }
+ParameterList : ParameterDecl                       { $$ = newParams(); addParam($$, $1); }
+              | ParameterList T_C ParameterDecl     { $$ = $1; addParam($$, $3); }
+ParameterDecl : identifier Type                     { $$ = newParamDecl($1, $2); }
 
 // version1 of Block: works
 // %empty calls multiple times. if you remove revLinkedList and replac $$ = NULL to like $$ = newId("hello"), hello will be shown multiple times. (tested with for loop example)
@@ -60,7 +71,7 @@ Block : T_LC T_RC                            { $$ = newBlockNoStmt(); }
 StatementList : Statement T_S                { $$ = $1; }
               | StatementList Statement T_S  { $2->next = $1; $$ = $2;}
 
-Statement : Declaration                     { $$ = newIdLine("Declaration", @$.first_line); } // TODO: newDeclStmt? or local var declaration?
+Statement : Declaration                     // { $$ = $1; }
           | SimpleStmt                      // { $$ = $1; }
           | ReturnStmt                      // { $$ = $1; }
           | BreakStmt                       // { $$ = $1; }
@@ -68,20 +79,12 @@ Statement : Declaration                     { $$ = newIdLine("Declaration", @$.f
           | IfStmt                          // { $$ = $1; }
           | ForStmt                         // { $$ = $1; }
           
-Signature : Parameters | Parameters Result
-Result : Type
 Type : T_ID                            { $$ = newTypeIdLine($1, @$.first_line); }
 // Type : TypeName                            { $$ = newTypeIdLine($1->val.sval, $1->line); } // works but incovenient
 // TypeName : identifier                      // { $$ = $1; }
 // Type : TypeName                            { $$ = newTypeIdLine($1, @$.first_line); } // does not work as $1 is a ASTNODE * and not char *
 // TypeName : identifier                      // { $$ = $1; }
 
-Parameters  :  T_LP T_RP 
-            | T_LP ParameterList T_RP 
-            | T_LP ParameterList T_C T_RP
-ParameterList : ParameterDecl
-              | ParameterList T_C ParameterDecl
-ParameterDecl : identifier Type
 
 SimpleStmt : EmptyStmt                          // { $$ = $1; }
            | ExpressionStmt                     // { $$ = $1; }
