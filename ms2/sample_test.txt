@@ -30,3 +30,5 @@ func main() {
 //    break // placing comment should automaticlaly still put semicolon in break
 //    return "hello world" // comment this line and break should appear
 }
+
+var anotherglobvar string
