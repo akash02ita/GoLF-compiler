@@ -28,12 +28,12 @@
 %type <op> assign_op
 %%
 
-prog    : SourceFile
-SourceFile	: %empty {$$ = ""; } // do not print anything for now
-			| SourceFile TopLevelDecl T_S { fprintf(stdout, "added a topleveldecl\n");}
+prog    : SourceFile                            { $$ = $1; progTree = $$; }
+SourceFile	: %empty                            { $$ = NULL; }
+			| SourceFile TopLevelDecl T_S       { if ($$ == NULL) $$ = $2; else {$$ = $1; append($$, $2); } }
 
 TopLevelDecl : GlobarVarDeclaration             // { $$ = $1; }   // Declaration
-             | FunctionDecl                     { $$ = $1; progTree = $$; }
+             | FunctionDecl                     // { $$ = $1; }
 
 GlobarVarDeclaration: T_VAR identifier Type     { $$ = newGlobVarDecl($2, $3, @$.first_line); }
 Declaration: T_VAR identifier Type              { $$ = newVarDecl($2, $3, @$.first_line); }

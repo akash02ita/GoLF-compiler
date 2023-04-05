@@ -17,8 +17,10 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     yyin = fopen(argv[1], "r");
+    const char * filename = argv[1];
 #else
     yyin = stdin;
+    const char * filename = "stdin";
 #endif
 
     if (yyin == NULL) {
@@ -37,5 +39,9 @@ int main(int argc, char** argv) {
     if (yyparse() != 0) {
         return EXIT_FAILURE;
     }
-    printTree(progTree, stdout, 1);
+    ASTNode * filenameProgTree = newProg(filename);
+    // append(filenameProgTree, progTree);
+    filenameProgTree->children[0] = progTree;
+    printTree(filenameProgTree, stdout, 1);
+    // printTree(progTree, stdout, 1);
 }
