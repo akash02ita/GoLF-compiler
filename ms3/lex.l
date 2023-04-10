@@ -210,16 +210,16 @@ bool handleImplicitSemicolon(const char * condition, const char * input) {
   return flag;
 }
 
-int mystrcat(char * dest, const char * src, const unsigned int DEST_SIZE) {
+int mystrcat(char ** dest, const char * src, const unsigned int DEST_SIZE) {
   unsigned int NEW_DEST_SIZE = DEST_SIZE;
-  if (DEST_SIZE < strlen(dest) + strlen(src)) {
-    char * backup = strdup(dest);
-    NEW_DEST_SIZE = strlen(dest) + strlen(src);
-    dest = (char *) realloc(dest, DEST_SIZE * sizeof(char));
-    strcpy(dest, backup);
+  if (DEST_SIZE < strlen(*dest) + strlen(src) + 1) {
+    char * backup = strdup(*dest);
+    NEW_DEST_SIZE = strlen(*dest) + strlen(src) + 1; // bugfix: forogt +1 for  null terminator: fixed realloc invalid next size error
+    *dest = (char *) realloc(*dest, NEW_DEST_SIZE * sizeof(char)); // bugfix: realloc can change to different address!!
+    strcpy(*dest, backup);
     free(backup);
   }
-  strcat(dest, src);
+  strcat(*dest, src);
   return NEW_DEST_SIZE;
 }
 
@@ -232,18 +232,18 @@ const char * filterText(const char * text, int mylen) {
     // idea source: https://stackoverflow.com/questions/14647979/is-it-possible-to-print-non-printing-characters-with-a-c-specifier
     if (isprint(c)) {
       char * temp = (char *) malloc(2*sizeof(char)); temp[0] = c; temp[1] = '\0';
-      mystrcat(r, temp, BUF_SIZE);
+      mystrcat(&r, temp, BUF_SIZE);
       free(temp);
     } else {
       switch(c) {
-        case '\n': BUF_SIZE = mystrcat(r, "\\n", BUF_SIZE); break;
-        case '\v': BUF_SIZE = mystrcat(r, "\\v", BUF_SIZE); break;
-        case '\t': BUF_SIZE = mystrcat(r, "\\t", BUF_SIZE); break;
-        case '\f': BUF_SIZE = mystrcat(r, "\\f", BUF_SIZE); break;
-        case '\r': BUF_SIZE = mystrcat(r, "\\r", BUF_SIZE); break;
-        case '\0': BUF_SIZE = mystrcat(r, "NUL", BUF_SIZE); break;
-        // default:   {char * temp; asprintf(&temp, "\\x%02x", c); mystrcat(r, temp, BUF_SIZE); free(temp); break;} // does not work
-        default:   {char temp[10]; sprintf(temp, "\\x%02x", c); mystrcat(r, temp, BUF_SIZE); ; break;} // assume formatted string output is smaller than allocated memory
+        case '\n': BUF_SIZE = mystrcat(&r, "\\n", BUF_SIZE); break;
+        case '\v': BUF_SIZE = mystrcat(&r, "\\v", BUF_SIZE); break;
+        case '\t': BUF_SIZE = mystrcat(&r, "\\t", BUF_SIZE); break;
+        case '\f': BUF_SIZE = mystrcat(&r, "\\f", BUF_SIZE); break;
+        case '\r': BUF_SIZE = mystrcat(&r, "\\r", BUF_SIZE); break;
+        case '\0': BUF_SIZE = mystrcat(&r, "NUL", BUF_SIZE); break;
+        // default:   {char * temp; asprintf(&temp, "\\x%02x", c); mystrcat(&r, temp, BUF_SIZE); free(temp); break;} // does not work
+        default:   {char temp[10]; sprintf(temp, "\\x%02x", c); mystrcat(&r, temp, BUF_SIZE); ; break;} // assume formatted string output is smaller than allocated memory
       }
     }
   }
