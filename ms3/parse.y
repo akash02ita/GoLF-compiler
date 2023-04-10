@@ -35,6 +35,7 @@ SourceFile	: %empty                            { $$ = NULL; }
 TopLevelDecl : GlobarVarDeclaration             // { $$ = $1; }   // Declaration
              | FunctionDecl                     // { $$ = $1; }
 
+// TODO: add "created identifier with label "newId" instead, if needed
 GlobarVarDeclaration: T_VAR identifier Type     { $$ = newGlobVarDecl($2, $3, @$.first_line); }
 Declaration: T_VAR identifier Type              { $$ = newVarDecl($2, $3, @$.first_line); }
 // Declaration : VarDecl
