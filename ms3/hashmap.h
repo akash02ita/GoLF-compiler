@@ -30,6 +30,8 @@ struct HashMap {
   size_t length;
   // `capacity` is size of the buffer `buffer` for the hashmap
   size_t capacity;
+
+  char * name; // block name type to be used later in code. E.g.: file, function, for, if etc..
 };
 
 // Invariants:
