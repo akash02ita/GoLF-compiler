@@ -160,7 +160,8 @@ ASTNode* newBlockStmt(ASTNode* stmt)
     for (int i = 0; i < MAX_CHILDREN; i++) node->children[i] = NULL;
     node->next = NULL;
     node->node_type = Stmt;
-    node->kind.stmt = Block;
+    // node->kind.stmt = Block; // BUGFIX
+    node->kind.stmt = Empty; // BUGFIX
     return node;
 }
 
@@ -728,6 +729,7 @@ void preTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), int (* haltFu
     prePostTraversal(tree, preFunc, NULL, haltFunc);
 }
 void prePostTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
+    if (tree == NULL) return; // for now add this. There seems to be no case that prefunc or postfunc require tree to be NULL
     if (haltFunc != NULL && haltFunc(tree)) return;
     if (preFunc != NULL) preFunc(tree);
     if (tree != NULL) {
@@ -738,4 +740,15 @@ void prePostTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* p
 }
 void postTraversal(ASTNode* tree, void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
     prePostTraversal(tree, NULL, postFunc, haltFunc);
+}
+
+void preTraversalPostBeforeNext(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
+    if (tree == NULL) return; // for now add this. There seems to be no case that prefunc or postfunc require tree to be NULL
+    if (haltFunc != NULL && haltFunc(tree)) return;
+    if (preFunc != NULL) preFunc(tree);
+    if (tree != NULL) {
+        for (int i = 0; i < MAX_CHILDREN; i++) preTraversalPostBeforeNext(tree->children[i], preFunc, postFunc, haltFunc);
+        if (postFunc != NULL) postFunc(tree); // post function happens after visiting current node but not the next ones
+        preTraversalPostBeforeNext(tree->next, preFunc, postFunc, haltFunc); // makes post order fixed, but messes up preorder
+    }
 }

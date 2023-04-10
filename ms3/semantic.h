@@ -4,6 +4,8 @@
 #include "astC.h"
 #include "stack.h"
 #include "hashmap.h"
+#include "parse.tab.h"
+#include "lex.h" // has mystrcat
 
 #ifndef bool
 #define bool int
@@ -61,8 +63,11 @@ ScopeValue * lookup(char * name);
 
 void pass1(ASTNode * asttree);
 void pass2(ASTNode * asttree);
+void pass2post(ASTNode * node);
 void pass3(ASTNode * asttree);
 void pass4(ASTNode * asttree);
+
+char * getStackProvenience();
 
 
 #endif
