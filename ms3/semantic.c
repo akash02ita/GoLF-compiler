@@ -41,11 +41,16 @@ void addUniverseBlock() {
     // predeclared types
     ScopeValue * typevalue = (ScopeValue *) malloc(sizeof(ScopeValue));
     typevalue->istype = true; typevalue->isconst = false; typevalue->isfunc = false; typevalue->isid = false;
+    hashMapInsert(universeScope, "void", typevalue);
     hashMapInsert(universeScope, "string", typevalue);
     hashMapInsert(universeScope, "int", typevalue);
     hashMapInsert(universeScope, "bool", typevalue);
+    
+    // predeclared constants
 
     // predeclared functions
+    
+    
 
 
     stackPush(stackstab, universeScope);
@@ -123,8 +128,54 @@ void define(ASTNode * node) {
         value->isfunc = true;
         value->line = node->children[0]->line;
         value->provenience = "_file"; // global scope in file block
+        char * functionname = node->children[0]->val.sval;
+
         // verify signature proper types (so that every parameter has valid type)
-        // define the function in currentscope
+        ASTNode * sig = node->children[1];
+        char * rettype = sig->children[0]->val.sval;
+        if (strcmp(rettype, "") == 0) rettype = "void";
+        if (lookup(rettype)->istype != true) {
+            fprintf(stderr, "error: define: function %s's return type `%s` is not a type, at or near line %d", functionname, rettype, node->line);
+            exit(EXIT_FAILURE);
+        }
+
+        Scope * tempParamScope = (Scope *) malloc(sizeof(Scope)); // do not openscope! Just check parameters being not redefined
+        assert (tempParamScope != NULL);
+        hashMapInit(tempParamScope, 1);
+
+        value->sig = (char *) malloc(sizeof(1000));
+        value->sig[0] = '\0';
+        ASTNode * param = sig->children[1]->children[0];
+        while (param != NULL) {
+            char * paramname = param->children[0]->val.sval;
+            char * paramtype = param->children[1]->val.sval;
+            if (lookup(paramtype)->istype != true) {
+                fprintf(stderr, "error: define: function %s param %s's type `%s  is not a type, at or near line %d\n", functionname, paramname, paramtype, node->line);
+                exit(EXIT_FAILURE);
+            }
+            if (hashMapFind(tempParamScope, paramname) != NULL) {
+                fprintf(stderr, "error: define: function %s's param %s is redefined, at or near line %d\n", functionname, paramname, node->line);
+                exit(EXIT_FAILURE);
+            }
+            hashMapInsert(tempParamScope, paramname, "dummy-non-null-value");
+            param = param->next;
+
+            // update value.sig
+            if (strlen(value->sig) > 0) strcat(value->sig, " ");
+            strcat(value->sig, paramtype); // assume value.sig has enogh buffer size (can realloc and copy, but not needed for now)
+        }
+
+        free(tempParamScope->buffer);
+        free(tempParamScope);
+
+        if (strcmp(value->sig, "") == 0) value->sig = "void";
+
+        // define the function in FILE BLOCK!!!
+        if (hashMapFind(currscope, functionname) != NULL) {
+            fprintf(stderr, "error: define: `%s` is redefined at or near line %d\n", functionname, node->line);
+            exit(EXIT_FAILURE);
+        }
+        hashMapInsert(currscope, functionname, value);
     }
     else { fprintf(stderr, "error: define: invalid node passed\n"); exit(EXIT_FAILURE); }
 
