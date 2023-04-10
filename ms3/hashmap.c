@@ -80,6 +80,9 @@ void hashMapInsert(struct HashMap *hashmap, char *key, void *value) {
       ++newHashMap.length;
     }
 
+    // also handle the new name added
+    newHashMap.name = hashmap->name;
+    
     free(hashmap->buffer);
     memcpy(hashmap, &newHashMap, sizeof newHashMap);
   }
@@ -93,7 +96,8 @@ void hashMapInsert(struct HashMap *hashmap, char *key, void *value) {
 }
 
 void hashMapPrint(struct HashMap *hashmap) {
-  fprintf(stderr, "Hashmap:\n");
+  if (hashmap->name != NULL) fprintf(stderr, "Hashmap of name `%s`:\n", hashmap->name);
+  else fprintf(stderr, "Hashmap of name UNDEFINED:\n");
   fprintf(stderr, "\tLength: %zu\n", hashmap->length);
   fprintf(stderr, "\tCapacity: %zu\n", hashmap->capacity);
   fprintf(stderr, "\tBuffer:\n");

@@ -29,6 +29,11 @@ void stackPush(struct Stack *stack, void *elem) {
 }
 
 void *stackPop(struct Stack *stack) {
+  if (stack->length < 0) {
+    fprintf(stderr, "Error: stackPop: stack length negative!\n");
+    exit(EXIT_FAILURE);
+  }
+  if (stack->length == 0) return NULL;
   assert(stack->length > 0);
 
   return stack->buffer[--stack->length];
