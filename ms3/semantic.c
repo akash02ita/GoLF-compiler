@@ -302,11 +302,28 @@ void pass2(ASTNode * asttree) {
         printf("\tPass2 found local var %s\n", node->children[0]->val.sval);
         define(node);
     }
-    // TODO: if, for statement to check (check if these block allow something)
+    else if (nested_block > 0 && node->node_type == Expr && node->kind.exp == Id) {
+        // identifier can only be inside the function body!
+        // lookup identifier or variable and is of type id
+        char * idname = node->val.sval;
+        if (lookup(idname)->isid != true) {
+            fprintf(stderr, "error: pass2: `%s` is not a variable at or near line %d\n", idname, node->line);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else if (node->node_type == Expr && node->kind.exp == FuncCall) {
+        char * functionname = node->children[0]->val.sval;
+        // verify function exists and is a type of function
+        if (lookup(functionname)->isfunc != true) {
+            fprintf(stderr, "error: pass2: `%s` is not a function at or near line %d\n", functionname, node->line);
+            exit(EXIT_FAILURE);
+        }
+    }
+    // DONE: if, for statement to check (check if these block allow something)
     // if  ---> new scope
     // for  ----> new scope
-    // assignment --> lookup use case
-    // expressions --> lookup use cases?
+    // assignment --> lookup use case ---> just use id node (as long as block is inside functionbody)
+    // expressions --> lookup use cases? ---> just use id checker (as long as lock is inside function body)
 
 }
 void pass2post(ASTNode * node) {
@@ -335,18 +352,16 @@ void pass2post(ASTNode * node) {
 }
 
 void pass3(ASTNode * asttree) {
-    // check function decl (only in file block)
+    // do type checking: not yet required for code gen
 }
 void pass4(ASTNode * asttree) {
-    // do local var define and lookup check
+    // do remaining checks: not yet required for code gen
 }
 
 void pass5(ASTNode * asttree) {
-    // do type checking: not yet required for code gen
 }
 
 void pass6(ASTNode * asttree) {
-    // do remaining checks: not yet required for code gen
 }
 
 
