@@ -18,7 +18,7 @@ bool handleImplicitSemicolon(const char * condition, const char * input);
 
 #define MY_MAX_BUFFER_SIZE 5000
 #define MIN_FREE_SPACE 10
-int mystrcat(char * dest, const char * src, const unsigned int DEST_SIZE);
+int mystrcat(char ** dest, const char * src, const unsigned int DEST_SIZE);
 
 
 const char * filterText(const char * text, int mylen);
