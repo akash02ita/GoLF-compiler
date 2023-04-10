@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "lex.h"
+#include "semantic.h"
 
 // #define ALLOW_STDIN
 
@@ -39,9 +40,17 @@ int main(int argc, char** argv) {
     if (yyparse() != 0) {
         return EXIT_FAILURE;
     }
+    /*
     ASTNode * filenameProgTree = newProg(filename);
     // append(filenameProgTree, progTree);
     filenameProgTree->children[0] = progTree;
     printTree(filenameProgTree, stdout, 1);
     // printTree(progTree, stdout, 1);
+    */
+
+    semantic(progTree);
+    ASTNode * filenameProgTree = newProg(filename);
+    filenameProgTree->children[0] = progTree;
+    printTree(filenameProgTree, stdout, 1);
+    
 }

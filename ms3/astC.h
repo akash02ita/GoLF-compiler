@@ -1,3 +1,5 @@
+#ifndef AST_H
+#define AST_H
 /*******************************
  * Shankar Ganesh
  * C AST for GoLF
@@ -159,3 +161,13 @@ void addParam(ASTNode* parent, ASTNode* param);
 
 // Place printTree somewhere else in a C file and remove 
 void printTree(ASTNode* tree, FILE* out,int INDENT);
+
+
+/*
+    TODO: add pre , prepost, post traversal methods in case needed
+
+    TODO: do i need to add more fields to annotate ast?
+    TODO: should i put another method to printAnnotedTree? Main.c will use this method instead after it
+*/
+
+#endif
