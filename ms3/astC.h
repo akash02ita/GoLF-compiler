@@ -34,6 +34,11 @@ typedef enum {Prog, Stmt, Expr, Decl} NodeType;
 typedef enum {IfStmt, IfElseStmt, Block, Empty, Assn, For, ExprStmt, DeclStmt, 
     BreakStmt, ReturnStmt} StmtType;
 
+// TODO: should i add newId type as well?
+/* whenever doing newvardecl or newglobdecl (so go in parse.y)
+    Declaration: T_VAR identifier Type 
+        replace identifier with T_ID and use a new method newNewIdLine() to make an id of enum `newId`
+*/
 typedef enum {Id, TypeId, BasicLit, UnaryExp, BinaryExp, FuncCall, Actual, Actuals} ExprType;
 typedef enum {FuncDecl, VarDecl, GlobVarDecl, ParamDecl, Params, Signature} DeclType;
 
