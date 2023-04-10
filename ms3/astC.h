@@ -164,10 +164,12 @@ void printTree(ASTNode* tree, FILE* out,int INDENT);
 
 
 /*
-    TODO: add pre , prepost, post traversal methods in case needed
-
     TODO: do i need to add more fields to annotate ast?
     TODO: should i put another method to printAnnotedTree? Main.c will use this method instead after it
 */
+
+void preTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
+void prePostTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
+void postTraversal(ASTNode* tree, void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
 
 #endif

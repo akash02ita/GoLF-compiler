@@ -722,3 +722,20 @@ ASTNode* newBlockStmt(ASTNode* stmt)
         tree = tree->next;
     }
 }
+
+
+void preTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
+    prePostTraversal(tree, preFunc, NULL, haltFunc);
+}
+void prePostTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
+    if (haltFunc != NULL && haltFunc(tree)) return;
+    if (preFunc != NULL) preFunc(tree);
+    if (tree != NULL) {
+        for (int i = 0; i < MAX_CHILDREN; i++) prePostTraversal(tree->children[i], preFunc, postFunc, haltFunc);
+        prePostTraversal(tree->next, preFunc, postFunc, haltFunc); // makes post order fixed, but messes up preorder
+    }
+    if (postFunc != NULL) postFunc(tree);
+}
+void postTraversal(ASTNode* tree, void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree)) {
+    prePostTraversal(tree, NULL, postFunc, haltFunc);
+}
