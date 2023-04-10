@@ -171,5 +171,6 @@ void printTree(ASTNode* tree, FILE* out,int INDENT);
 void preTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
 void prePostTraversal(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
 void postTraversal(ASTNode* tree, void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
+void preTraversalPostBeforeNext(ASTNode* tree, void (* preFunc)(ASTNode * tree), void (* postFunc)(ASTNode * tree), int (* haltFunc)(ASTNode * tree));
 
 #endif

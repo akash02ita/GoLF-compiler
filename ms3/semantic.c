@@ -22,11 +22,12 @@ void semantic(ASTNode * asttree) { // should annotate tree passed by ref
     closescope(1); // destroy file block (pass2 will remake the file block)
     addFileBlock(); // openscope file block (new and fresh!!)
     printf("\t\t===== pass 1: reverse ======\n");
-    postTraversal(asttree, pass1, NULL);
+    postTraversal(asttree, pass1, NULL); // do not close file from this point as it will be reused in lookup
 
+    printf("\t\t===== pass 2: prepost ======\n");
+    // prePostTraversal(asttree, pass2, pass2post, NULL); // problem: scopes are not closed on exit of function!
+    preTraversalPostBeforeNext(asttree, pass2, pass2post, NULL); // solves problem
 
-    pass2(asttree);    
-    // no need to close as it will be used
     pass3(asttree);    
     pass4(asttree);    
 }
@@ -102,18 +103,21 @@ void define(ASTNode * node) {
     value->isconst = false; value->isfunc = false; value->isid = false; value->istype = false;
 
     if (node->node_type == Decl && node->kind.decl == GlobVarDecl) {
-        // first define var
         char * name_key = strdup(node->children[0]->val.sval);
+        char * type_var = node->children[1]->val.sval;
+        // first define var
         if (hashMapFind(currscope, name_key) != NULL) {
             fprintf(stderr, "error: define: `%s` is being redefined at or near line %d\n", name_key, node->children[0]->line);
             exit(EXIT_FAILURE);
         }
         value->isid = true;
+        value->type = type_var; // type of identifier
         value->line = node->children[0]->line;
-        value->provenience = "_file"; // global scope in file block
+        // value->provenience = "_universe_file"; // global scope in file block
+        value->provenience = getStackProvenience(); // same as above
+        
         hashMapInsert(currscope, name_key, value);
         // then check/lookup type of var being valid
-        char * type_var = node->children[1]->val.sval;
         ScopeValue * entryfound = lookup(type_var);
         if (entryfound->istype != true) {
             fprintf(stderr, "error: define: %s's type `%s` is not a type, at or near line %d\n", name_key, type_var, node->children[0]->line);
@@ -121,8 +125,28 @@ void define(ASTNode * node) {
         }
     }
     else if (node->node_type == Decl && node->kind.decl == VarDecl) {
+        char * name_key = strdup(node->children[0]->val.sval);
+        char * type_var = node->children[1]->val.sval;
         // first check/lookup type of var being valid
+        ScopeValue * entryfound = lookup(type_var);
+        if (entryfound->istype != true) {
+            fprintf(stderr, "error: define: %s's type `%s` is not a type, at or near line %d\n", name_key, type_var, node->children[0]->line);
+            exit(EXIT_FAILURE);
+        }
+
         // then define var
+        if (hashMapFind(currscope, name_key) != NULL) {
+            fprintf(stderr, "error: define: `%s` is being redefined at or near line %d\n", name_key, node->children[0]->line);
+            exit(EXIT_FAILURE);
+        }
+        value->isid = true;
+        value->type = type_var; // type of identifier
+        value->line = node->children[0]->line;
+
+        value->provenience = getStackProvenience(); // provenience requires to pop all scopes and add names!
+        // printf("the net provenience is %s\n", value->provenience); getchar();
+
+        hashMapInsert(currscope, name_key, value);
     }
     else if (node->node_type == Decl && node->kind.decl == FuncDecl) {
         value->isfunc = true;
@@ -143,7 +167,7 @@ void define(ASTNode * node) {
         assert (tempParamScope != NULL);
         hashMapInit(tempParamScope, 1);
 
-        value->sig = (char *) malloc(sizeof(1000));
+        value->sig = (char *) malloc(1000*sizeof(char));
         value->sig[0] = '\0';
         ASTNode * param = sig->children[1]->children[0];
         while (param != NULL) {
@@ -175,7 +199,27 @@ void define(ASTNode * node) {
             fprintf(stderr, "error: define: `%s` is redefined at or near line %d\n", functionname, node->line);
             exit(EXIT_FAILURE);
         }
+        // also put the same for type, as it will not affect logic (but if using value.type instea might be easier in some parts)
+        value->type = value->rettype;
         hashMapInsert(currscope, functionname, value);
+    }
+    else if (node->node_type == Decl && node->kind.decl == Signature) {
+        // over here assume caller has already opened the scope for the function!
+        // so curretscope is scope of function body!!!!!!!!!
+        // by this point the types are valid and thus they only need to be defined
+        ASTNode * param = node->children[1]->children[0];
+        while (param != NULL) {
+            char * paramname = param->children[0]->val.sval;
+            char * paramtype = param->children[1]->val.sval;
+            ScopeValue * paramvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+            paramvalue->isid = true; paramvalue->isconst = false; paramvalue->isfunc = false; paramvalue->istype = false;
+            paramvalue->type = paramtype;
+            
+            hashMapInsert(currscope, paramname, paramvalue); // define parameter id inside functionbody scope
+
+            param = param->next;
+        }
+        
     }
     else { fprintf(stderr, "error: define: invalid node passed\n"); exit(EXIT_FAILURE); }
 
@@ -225,9 +269,71 @@ void pass1(ASTNode * asttree) {
         define(asttree);
     }
 }
+
+int nested_block = 0;
 void pass2(ASTNode * asttree) {
-    // do pass3 or something else here?
+    ASTNode * node = asttree;
+    assert (node != NULL);
+    if (node->node_type == Decl && node->kind.decl == FuncDecl) {
+        const char * functionname = node->children[0]->val.sval;
+        printf("Opening scope for functionname %s\n", functionname);
+        openscope(functionname);
+    }
+    else if (node->node_type == Stmt && node->kind.decl == IfStmt) {
+        printf("Opening scope for if statement\n");
+        openscope("if");
+    }
+    else if (node->node_type == Stmt && node->kind.decl == IfElseStmt) {
+        printf("Opening scope for ifelse statement\n");
+        openscope("ifelse");
+    }
+    else if (node->node_type == Stmt && node->kind.decl == Block) {
+        if (nested_block > 0) { // function starts with a body as the 1st block. but must prevent that to openscope in that case
+            printf("Opening scope for Block statement %d\n", nested_block);
+            openscope("block");
+        }
+        nested_block++;
+    }
+    else if (node->node_type == Decl && node->kind.decl == Signature) {
+        printf("\tPass2 found signature %s\n", node->children[0]->val.sval);
+        define(node); // define the signature of parameters in body
+    }
+    else if (node->node_type == Decl && node->kind.decl == VarDecl) {
+        printf("\tPass2 found local var %s\n", node->children[0]->val.sval);
+        define(node);
+    }
+    // TODO: if, for statement to check (check if these block allow something)
+    // if  ---> new scope
+    // for  ----> new scope
+    // assignment --> lookup use case
+    // expressions --> lookup use cases?
+
 }
+void pass2post(ASTNode * node) {
+    if (node->node_type == Decl && node->kind.decl == FuncDecl) {
+        const char * functionname = node->children[0]->val.sval;
+        printf("Closing scope for functionname %s\n", functionname);
+        closescope(0); // close function body scope without losing data!
+    }
+    else if (node->node_type == Stmt && node->kind.decl == IfStmt) {
+        printf("Closing scope for if statement\n");
+        closescope(0);
+    }
+    else if (node->node_type == Stmt && node->kind.decl == IfElseStmt) {
+        printf("Closing scope for ifelse statement\n");
+        closescope(0);
+    }
+    else if (node->node_type == Stmt && node->kind.decl == Block) {
+        nested_block--;
+        if (nested_block > 0)
+        {
+            printf("Closing scope for Block statement %d\n", nested_block);
+            // printTree(node, stdout, 4);
+            closescope(0);
+        }
+    }
+}
+
 void pass3(ASTNode * asttree) {
     // check function decl (only in file block)
 }
@@ -241,4 +347,33 @@ void pass5(ASTNode * asttree) {
 
 void pass6(ASTNode * asttree) {
     // do remaining checks: not yet required for code gen
+}
+
+
+
+char * getStackProvenience() {
+    int BUFF_SIZE = 1;
+    char * provenience = (char *) malloc(BUFF_SIZE*sizeof(char));
+    provenience[0] = '\0';
+
+
+    int before = stackstab->length;
+    struct Stack * temp = (struct Stack *) malloc(sizeof(struct Stack));
+    assert (temp != NULL);
+    stackInit(temp, 1);
+    while (stackstab->length > 0) stackPush(temp, stackPop(stackstab));
+    while (temp->length > 0) {
+        Scope * currentscope = (Scope *) stackPop(temp);
+        
+        // provenicne prefix = prefi + _ + scope.name
+        BUFF_SIZE = mystrcat(&provenience, "_", BUFF_SIZE); // from lex.h
+        BUFF_SIZE = mystrcat(&provenience, currentscope->name, BUFF_SIZE); // from lex.h
+
+        stackPush(stackstab, currentscope);
+
+    }
+    assert (stackstab->length == before);
+    free(temp);
+
+    return provenience;
 }
