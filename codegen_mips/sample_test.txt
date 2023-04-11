@@ -1,0 +1,6 @@
+var globalvar int
+func main() {
+    var int bool
+}
+
+var anotherglobvar string
