@@ -711,7 +711,9 @@ ASTNode* newBlockStmt(ASTNode* stmt)
             default:
                 break;
         }
-
+        
+        if (tree->sym != NULL) fprintf(out, "  sym=0x%p", tree->sym);
+        
         fprintf(out, "\n");
         
         INDENT++;
