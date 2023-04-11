@@ -46,6 +46,8 @@ typedef enum {FuncDecl, VarDecl, GlobVarDecl, ParamDecl, Params, Signature} Decl
 
 typedef struct ASTNode 
 {
+    void * sym; // attribute for table
+
     const char* label;
     struct ASTNode* children[MAX_CHILDREN];
     struct ASTNode* next; // or sibling 

@@ -34,7 +34,8 @@ void semantic(ASTNode * asttree) { // should annotate tree passed by ref
 
 
 void addUniverseBlock() {
-    openscope("universe");
+    // openscope("universe");
+    openscope(""); // empty prefix is more helpful so that when getting labelname=functoiname+scope.name, prints, printb remain same
     Scope * universeScope = stackPop(stackstab);
     hashMapInit(universeScope, 1);
     assert (universeScope->capacity > 0);
@@ -46,8 +47,23 @@ void addUniverseBlock() {
     hashMapInsert(universeScope, "string", typevalue);
     hashMapInsert(universeScope, "int", typevalue);
     hashMapInsert(universeScope, "bool", typevalue);
+
+    ScopeValue * funcvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+    funcvalue->istype = false; funcvalue->isconst = false; funcvalue->isfunc = true; funcvalue->isid = false;
+    hashMapInsert(universeScope, "prints", funcvalue);
+    hashMapInsert(universeScope, "printi", funcvalue);
+    hashMapInsert(universeScope, "printb", funcvalue);
     
+    
+    ScopeValue * constvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+    constvalue->istype = false; constvalue->isconst = true; constvalue->isfunc = false; constvalue->isid = false;
+    hashMapInsert(universeScope, "true", constvalue);
+    hashMapInsert(universeScope, "false", constvalue);
     // predeclared constants
+    // ScopeValue universe[] = {
+        
+    //     // {.istype=false, .isid=false}
+    // }
 
     // predeclared functions
     
@@ -113,7 +129,7 @@ void define(ASTNode * node) {
         value->isid = true;
         value->type = type_var; // type of identifier
         value->line = node->children[0]->line;
-        // value->provenience = "_universe_file"; // global scope in file block
+        // value->provenience = "_file"; // global scope in file block
         value->provenience = getStackProvenience(); // same as above
         
         hashMapInsert(currscope, name_key, value);
@@ -123,6 +139,7 @@ void define(ASTNode * node) {
             fprintf(stderr, "error: define: %s's type `%s` is not a type, at or near line %d\n", name_key, type_var, node->children[0]->line);
             exit(EXIT_FAILURE);
         }
+        node->sym = (void *) value;
     }
     else if (node->node_type == Decl && node->kind.decl == VarDecl) {
         char * name_key = strdup(node->children[0]->val.sval);
@@ -147,11 +164,13 @@ void define(ASTNode * node) {
         // printf("the net provenience is %s\n", value->provenience); getchar();
 
         hashMapInsert(currscope, name_key, value);
+        node->sym = (void *) value;
     }
     else if (node->node_type == Decl && node->kind.decl == FuncDecl) {
         value->isfunc = true;
         value->line = node->children[0]->line;
-        value->provenience = "_file"; // global scope in file block
+        // value->provenience = "_file"; // global scope in file block
+        value->provenience = getStackProvenience();
         char * functionname = node->children[0]->val.sval;
 
         // verify signature proper types (so that every parameter has valid type)
@@ -202,6 +221,7 @@ void define(ASTNode * node) {
         // also put the same for type, as it will not affect logic (but if using value.type instea might be easier in some parts)
         value->type = value->rettype;
         hashMapInsert(currscope, functionname, value);
+        node->sym = (void *) value;
     }
     else if (node->node_type == Decl && node->kind.decl == Signature) {
         // over here assume caller has already opened the scope for the function!
@@ -213,10 +233,12 @@ void define(ASTNode * node) {
             char * paramtype = param->children[1]->val.sval;
             ScopeValue * paramvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
             paramvalue->isid = true; paramvalue->isconst = false; paramvalue->isfunc = false; paramvalue->istype = false;
-            paramvalue->type = paramtype;
+            paramvalue->type = paramtype; // int string bool
             
             hashMapInsert(currscope, paramname, paramvalue); // define parameter id inside functionbody scope
-
+            // param->sym = (void *) paramvalue;
+            param->children[0]->sym = (void *) paramvalue;
+            // param->children[1]->sym = (void *) paramvalue;
             param = param->next;
         }
         
@@ -306,6 +328,21 @@ void pass2(ASTNode * asttree) {
         // identifier can only be inside the function body!
         // lookup identifier or variable and is of type id
         char * idname = node->val.sval;
+        /* 
+        this part of semantic check is not quite correct as a functionname is an id (not isid can be false)
+        if (lookup(idname)->isid != true) {
+            fprintf(stderr, "error: pass2: `%s` is not a variable at or near line %d\n", idname, node->line);
+            exit(EXIT_FAILURE);
+        }
+        */
+        node->sym = (void *) lookup(idname);
+    }
+    else if (node->node_type == Stmt && node->kind.stmt == Assn) {
+        // assert that left side of = is an identifier
+        ASTNode * lhs = node->children[0];
+        if (lhs == NULL) {fprintf(stderr, "error: pass2: assignment lhs is NULL\n"); exit(EXIT_FAILURE); }
+        if (lhs->node_type != Expr || lhs->kind.exp != Id) {fprintf(stderr, "error: pass2: lhs of assignment is not an identifier at or near line %d\n", node->line); exit(EXIT_FAILURE); }
+        char * idname = lhs->val.sval;
         if (lookup(idname)->isid != true) {
             fprintf(stderr, "error: pass2: `%s` is not a variable at or near line %d\n", idname, node->line);
             exit(EXIT_FAILURE);
@@ -381,8 +418,11 @@ char * getStackProvenience() {
         Scope * currentscope = (Scope *) stackPop(temp);
         
         // provenicne prefix = prefi + _ + scope.name
-        BUFF_SIZE = mystrcat(&provenience, "_", BUFF_SIZE); // from lex.h
-        BUFF_SIZE = mystrcat(&provenience, currentscope->name, BUFF_SIZE); // from lex.h
+        if (currentscope->name != NULL && strcmp(currentscope->name, "") != 0) // universe has empty value. As convention, do not append anyting if scopename is empty
+        {
+            BUFF_SIZE = mystrcat(&provenience, "_", BUFF_SIZE); // from lex.h
+            BUFF_SIZE = mystrcat(&provenience, currentscope->name, BUFF_SIZE); // from lex.h
+        }
 
         stackPush(stackstab, currentscope);
 
