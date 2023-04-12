@@ -9,6 +9,13 @@ int lvcounter = 0;
 void gencode(ASTNode * tree, FILE * outcode) {
     out = outcode; // set the output file to write
     trav(tree);
+    // append template assembly code with predefined stuff
+    FILE * template = fopen("TEMPLATE.s", "r");
+    assert (template != NULL);
+    char ch;
+    while ((ch = fgetc(template)) != EOF)
+        fputc(ch, out);
+    
 }
 void trav(ASTNode * node) {
     while (node != NULL)
@@ -71,7 +78,7 @@ void trav(ASTNode * node) {
             
 
 
-            fprintf(out, "%s\n", retlabel);
+            fprintf(out, "%s:\n", retlabel);
             // step4: write code to deallocate stack frame
             deallocate(node);
 
@@ -92,7 +99,7 @@ void allocate(ASTNode * funcnode) {
     writei("addi $sp, $sp, -4");
     writei("sw $ra, 0($sp)"); // save old ra
     // frame point at bottom of stack frame (+ offset for args, - offset for LVs)
-    writei("addi $fp, 8($sp)");
+    writei("addi $fp, $sp, 8");
 
     // now allocate LVs (local vars)
     lvcounter = -8-4; // jump fp, lr copies and -4 to use the appropriate top
@@ -150,7 +157,7 @@ void addLV(ASTNode * node) {
         case "bool"
             sw 0
         case "string"
-            la t0, $string_zero
+            la t0, $string_empty
             sw t0, 0($sp) // save address of label
     */
     // need to traversal on functionblock
@@ -167,6 +174,7 @@ void addLV(ASTNode * node) {
         char * type_var = node->children[1]->val.sval;
         // printf("Variable %s is of type %s\n", unique_name, type_var); getchar();
         fprintf(out, "\t# Alloc %s\n", unique_name);
+        writei("addi $sp, $sp, -4  # add memory for lv"); 
         if (strcmp(type_var, "int") == 0) {
             writei("sw $zero, 0($sp)");
         }
@@ -174,7 +182,7 @@ void addLV(ASTNode * node) {
             writei("sw $zero, 0($sp)");
         }
         else if (strcmp(type_var, "string") == 0) {
-            writei("la $t0, $string_zero");
+            writei("la $t0, $string_empty");
             writei("sw $t0, 0($sp)"); // variable will store address of label always!
         } else { assert(0); }
     }
