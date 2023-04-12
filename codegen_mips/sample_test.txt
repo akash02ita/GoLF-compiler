@@ -1,6 +1,14 @@
+var anotherglobvar string
+var anotherglobvar2 bool
 var globalvar int
 func main() {
     var int bool
+    var test string
+    test = "hello\n"
+}
+func main2() {
+    var int bool
+    var test string
+    test = "hello\n"
 }
 
-var anotherglobvar string

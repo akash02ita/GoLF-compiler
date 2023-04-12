@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "lex.h"
 #include "semantic.h"
+#include "gen.h"
 
 // #define ALLOW_STDIN
 
@@ -49,8 +50,11 @@ int main(int argc, char** argv) {
     */
 
     semantic(progTree);
+    FILE * codeout = fopen("OUT.s", "w+"); // creates or overwrites
+    fprintf(codeout, "# mips code\n");
+    gencode(progTree, codeout);
     ASTNode * filenameProgTree = newProg(filename);
     filenameProgTree->children[0] = progTree;
-    printTree(filenameProgTree, stdout, 1);
+    // printTree(filenameProgTree, stdout, 1);
     
 }
