@@ -1,6 +1,7 @@
 
 .data
-.align 2
+input:  .space 2
+        .align 2
 
 $string_empty: .byte 0 # by default string will be initialized to empty strings
 
@@ -43,7 +44,7 @@ $true: .byte 116, 114, 117, 101, 0
 $false: .byte 102, 97, 108, 115, 101, 0
 $invalidbool: .byte 105, 110, 118, 97, 108, 105, 100, 32, 98, 111, 111, 108, 0
 .text
-.align2
+.align 2
 printb: # input $0 = 0 or 1 (an integer)
     addi $sp, $sp, -4
     sw $ra, 0($sp)
@@ -81,8 +82,8 @@ len: # input address of first char
     move $v0, $zero # counter = 0
     j lentest
 lenloop:
-    addi $a0, $a0, 1 // next char
-    addi $v0, $v0, 1 // length++
+    addi $a0, $a0, 1 # next char
+    addi $v0, $v0, 1 # length++
 lentest:
     lb $t0, 0($a0)
     bne $t0, $zero, lenloop
