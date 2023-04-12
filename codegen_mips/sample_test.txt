@@ -14,12 +14,14 @@ func main() {
     for (true) {
         for (false) {
             break
+            test = "testout.s"
         }
 
         return 2
     }
 }
 func main2(arg1 int, arg2 string) {
+    arg2 = "shoudl work??"
     var int bool
     var test string
     test = "hello\n"

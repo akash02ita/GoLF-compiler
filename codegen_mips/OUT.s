@@ -23,6 +23,7 @@ main:
 	addi $sp, $sp, -4  # add memory for lv
 	la $t0, $string_empty
 	sw $t0, 0($sp)
+	sw $t0, -16($fp) # assignment for test string
 ifbody_0:
 ifbody_1:
 ifelse_1:
@@ -34,6 +35,7 @@ forloop_0:
 forpretest_1:
 forloop_1:
 	j forexitloop_1
+	sw $t0, -16($fp) # assignment for test string
 	j forpretest_1
 forexitloop_1:
 	move $v0, $t0
@@ -67,6 +69,8 @@ main2:
 	addi $sp, $sp, -4  # add memory for lv
 	la $t0, $string_empty
 	sw $t0, 0($sp)
+	sw $t0, 4($fp) # assignment for arg2 string
+	sw $t0, -16($fp) # assignment for test string
 main2_file_ret:
 	# Dealloc int_file_main2
 	add $sp, $sp, 4

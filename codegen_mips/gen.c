@@ -120,6 +120,7 @@ void buildSigTable(ASTNode * node) {
         int * offset = malloc(sizeof(int));
         *offset = sigcounter;
         // printf("buildtableSig: Param unique name %s offset %d\n", unique_name, *offset); getchar();
+        hashMapInsert(table, unique_name, (void *) offset);
         sigcounter += 4;
     }
 }
@@ -312,6 +313,25 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             // left side must be indentifier
             // right side can be an expression
                 // eval expression without any true, false branches
+            ASTNode * lhs = blocknode->children[0];
+            char * varname = lhs->val.sval;
+            ScopeValue * value = (ScopeValue *) lhs->sym;
+            char * vartype = value->type;
+
+            int size = 1; char * unique_name = (char *) malloc(size); unique_name[0] = '\0';
+            size = mystrcat(&unique_name, varname, size);
+            size = mystrcat(&unique_name, value->provenience, size);
+
+            int * offset = hashMapFind(table, unique_name);
+            assert(offset != NULL); // must be defined by buildTable
+            // fprintf(stderr, "good news! Found assignment for %s of type %s with offset $fp+ %d\n", varname, vartype, *offset); getchar();
+
+            ASTNode * rhs = blocknode->children[1];
+            // $t0 will have result of riht hand side expression
+            evalExpression(rhs, NULL, NULL);
+            // write code for assignment
+            fprintf(out, "\tsw $t0, %d($fp) # assignment for %s %s\n", *offset, varname, vartype);
+
             break;
         }
         case ExprStmt: {
