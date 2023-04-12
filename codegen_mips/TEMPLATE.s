@@ -29,11 +29,13 @@ getchar_ret:
 
 
 prints: # input: $a0 = address of first char of string
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 4
     syscall
     jr $ra
 
 printc: # input: $a0 = address of char to print
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 1
     syscall
     jr $ra
@@ -46,6 +48,7 @@ $invalidbool: .byte 105, 110, 118, 97, 108, 105, 100, 32, 98, 111, 111, 108, 0
 .text
 .align 2
 printb: # input $0 = 0 or 1 (an integer)
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
@@ -73,12 +76,14 @@ printb_ret:
 
 
 printi:
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 1
     syscall
     jr $ra
 
 
 len: # input address of first char
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     move $v0, $zero # counter = 0
     j lentest
 lenloop:
