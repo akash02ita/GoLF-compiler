@@ -236,7 +236,8 @@ void define(ASTNode * node) {
             paramvalue->type = paramtype; // int string bool
             
             hashMapInsert(currscope, paramname, paramvalue); // define parameter id inside functionbody scope
-            // param->sym = (void *) paramvalue;
+            paramvalue->provenience = getStackProvenience();
+            param->sym = (void *) paramvalue;
             param->children[0]->sym = (void *) paramvalue;
             // param->children[1]->sym = (void *) paramvalue;
             param = param->next;

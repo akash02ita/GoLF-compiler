@@ -6,7 +6,7 @@ func main() {
     var test string
     test = "hello\n"
 }
-func main2() {
+func main2(arg1 int, arg2 string) {
     var int bool
     var test string
     test = "hello\n"

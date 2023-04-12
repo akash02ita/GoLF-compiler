@@ -4,11 +4,11 @@
 #include "hashmap.h"
 #include "stack.h"
 
-void gencode(ASTNode * node, FILE * out);
-void trav(ASTNode * node, FILE * out);
+void gencode(ASTNode * node, FILE * outcode);
+void trav(ASTNode * node);
 
-void allocate(ASTNode * funcnode, FILE * out);
-void deallocate(ASTNode * funcnode, FILE * out);
+void allocate(ASTNode * funcnode);
+void deallocate(ASTNode * funcnode);
 
 // void applyblock();
 
@@ -16,4 +16,10 @@ void deallocate(ASTNode * funcnode, FILE * out);
 
 
 // write instruction subroutine
-void writei(FILE * out, char * ins);
+void writei(char * ins);
+extern FILE * outcode;
+
+
+
+void buildSigTable(ASTNode * node);
+void buildLVTable(ASTNode * node);
