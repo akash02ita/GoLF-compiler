@@ -70,12 +70,12 @@ void trav(ASTNode * node) {
             preTraversalPostBeforeNext(node->children[2], buildLVTable, NULL, NULL);
             allocate(node);
 
-            char * retlabel = label;
+            char * retlabel = strdup(label);
             buffsize = mystrcat(&retlabel, "_ret", buffsize);
             printf("return label is %s:\n", retlabel);
 
             // step3: write code for function block
-            
+            applyBlock(node->children[2], label, retlabel, NULL);
 
 
             fprintf(out, "%s:\n", retlabel);
@@ -234,4 +234,103 @@ void deallocate(ASTNode * funcnode) {
 
 void writei(char * ins) {
     fprintf(out, "\t%s\n", ins);
+}
+
+int ifcounter = 0;
+int forcounter = 0;
+int branchcounter = 0;
+char * generateLabel(char * prefix, int counter) {
+    char * res = (char *) malloc(1000); res[0] = '\0'; // assume it is enough long
+    sprintf(res, "%s_%d", prefix, counter);
+    assert( strlen(res) < 1000 ); // verify did not overflow memory
+    return res;
+}
+void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * breaklabel) {
+    if (blocknode == NULL) return;
+    if (blocknode->node_type == Stmt) {
+        switch (blocknode->kind.stmt)
+        {
+        case BreakStmt: {
+            // write instruction to branch to breaklabel
+            fprintf(out, "\tj %s\n", breaklabel);
+            break;
+        }
+        case ReturnStmt: {
+            // if return is non-void, set $v0 to appropriate return value
+            if (blocknode->children[0] != NULL) {
+                evalExpression(blocknode->children[0], NULL, NULL);
+                // evalExpression sets $t0 to result of expression
+                writei("move $v0, $t0");
+            }
+            // write instruction to branch to breaklabel
+            fprintf(out, "\tj %s\n", retlabel);
+            break;
+        }
+        case Block: {
+            // mystrcat(&label, "_block", strlen(label))
+            applyBlock(blocknode->children[0], NULL, retlabel, breaklabel);
+            break;
+        }
+        case IfStmt: // will behave same way as ifelse, but with else children = null
+        case IfElseStmt: {
+            char * bodylabel = generateLabel("ifbody", ifcounter);
+            char * elselabel = generateLabel("ifelse", ifcounter);
+            ifcounter++;
+
+            // write code for condition checking
+            evalExpression(blocknode->children[0], bodylabel, elselabel);
+            // write code for body of if
+            fprintf(out, "%s:\n", bodylabel);
+            applyBlock(blocknode->children[1], NULL, retlabel, breaklabel);
+            // write code for else of if
+            fprintf(out, "%s:\n", elselabel);
+            applyBlock(blocknode->children[2], NULL, retlabel, breaklabel);
+            break;
+        }
+        case For: {
+            // new break label!!!
+            char * pretestlabel = generateLabel("forpretest", forcounter);
+            char * looplabel = generateLabel("forloop", forcounter);
+            char * exitlooplabel = generateLabel("forexitloop", forcounter);
+            forcounter++;
+
+            fprintf(out, "%s:\n", pretestlabel); // pretest
+            evalExpression(blocknode->children[0], looplabel, exitlooplabel); // write code for condition of for loop
+
+            // loop of for
+            fprintf(out, "%s:\n", looplabel);
+            // write code for's block, with new breaklabel = exitlooplabel
+            applyBlock(blocknode->children[1], NULL, retlabel, exitlooplabel);
+
+            fprintf(out, "\tj %s\n", pretestlabel); // writei
+
+            // exit out for label
+            fprintf(out, "%s:\n", exitlooplabel);
+            break;
+        }
+        case Assn: {
+            // left side must be indentifier
+            // right side can be an expression
+                // eval expression without any true, false branches
+            break;
+        }
+        case ExprStmt: {
+            // only FuncCall must be allowed
+            // rest is ignored or can be optional (whichever is easier)
+                // like 1+2, var+var2 sitting there for nothing. it does nothing to the actual logic of code. So they can be ignored
+            break;
+        }
+        default:
+            // empty statements are skipped: no purpose in code
+            // declarations are skipped: allocation already done
+            break;
+        }
+    }
+    applyBlock(blocknode->next, label, retlabel, breaklabel); // do the next as well.
+
+}
+
+
+void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
+
 }

@@ -23,6 +23,23 @@ main:
 	addi $sp, $sp, -4  # add memory for lv
 	la $t0, $string_empty
 	sw $t0, 0($sp)
+ifbody_0:
+ifbody_1:
+ifelse_1:
+ifbody_2:
+ifelse_2:
+ifelse_0:
+forpretest_0:
+forloop_0:
+forpretest_1:
+forloop_1:
+	j forexitloop_1
+	j forpretest_1
+forexitloop_1:
+	move $v0, $t0
+	j main_file_ret
+	j forpretest_0
+forexitloop_0:
 main_file_ret:
 	# Dealloc int_file_main
 	add $sp, $sp, 4
@@ -64,7 +81,8 @@ main2_file_ret:
 	jr $ra
 
 .data
-.align 2
+input:  .space 2
+        .align 2
 
 $string_empty: .byte 0 # by default string will be initialized to empty strings
 
@@ -92,11 +110,13 @@ getchar_ret:
 
 
 prints: # input: $a0 = address of first char of string
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 4
     syscall
     jr $ra
 
 printc: # input: $a0 = address of char to print
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 1
     syscall
     jr $ra
@@ -107,8 +127,9 @@ $true: .byte 116, 114, 117, 101, 0
 $false: .byte 102, 97, 108, 115, 101, 0
 $invalidbool: .byte 105, 110, 118, 97, 108, 105, 100, 32, 98, 111, 111, 108, 0
 .text
-.align2
+.align 2
 printb: # input $0 = 0 or 1 (an integer)
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
@@ -136,17 +157,19 @@ printb_ret:
 
 
 printi:
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     li $v0 1
     syscall
     jr $ra
 
 
 len: # input address of first char
+    lw $a0, 0($sp) # in my case, i am passing all args in stack
     move $v0, $zero # counter = 0
     j lentest
 lenloop:
-    addi $a0, $a0, 1 // next char
-    addi $v0, $v0, 1 // length++
+    addi $a0, $a0, 1 # next char
+    addi $v0, $v0, 1 # length++
 lentest:
     lb $t0, 0($a0)
     bne $t0, $zero, lenloop

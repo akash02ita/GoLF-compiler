@@ -5,15 +5,12 @@
 #include "stack.h"
 
 void gencode(ASTNode * node, FILE * outcode);
-void trav(ASTNode * node);
+void trav(ASTNode * node); // traverse thorugh toplevedeclr
+void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * breaklabel);
+void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel);
 
 void allocate(ASTNode * funcnode);
 void deallocate(ASTNode * funcnode);
-
-// void applyblock();
-
-// void evalexpr();
-
 
 // write instruction subroutine
 void writei(char * ins);

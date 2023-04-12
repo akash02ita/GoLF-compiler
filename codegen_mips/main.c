@@ -55,6 +55,6 @@ int main(int argc, char** argv) {
     gencode(progTree, codeout);
     ASTNode * filenameProgTree = newProg(filename);
     filenameProgTree->children[0] = progTree;
-    // printTree(filenameProgTree, stdout, 1);
+    printTree(filenameProgTree, stdout, 1);
     
 }
