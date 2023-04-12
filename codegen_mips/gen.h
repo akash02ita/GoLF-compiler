@@ -23,3 +23,5 @@ extern FILE * outcode;
 
 void buildSigTable(ASTNode * node);
 void buildLVTable(ASTNode * node);
+
+void addLV(ASTNode * node);
