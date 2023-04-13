@@ -66,7 +66,9 @@ void trav(ASTNode * node) {
             fprintf(out, ".text\n"); fprintf(out, "%s:\n", label);
             // step2: write code for STACK frame allocation
             sigcounter = 0; lvcounter = -8-4;
-            preTraversalPostBeforeNext(node->children[1], buildSigTable, NULL, NULL);
+            // preTraversalPostBeforeNext(node->children[1], buildSigTable, NULL, NULL);
+            // preTraversalPostBeforeNext(node->children[1], buildSigTable, NULL, NULL); // problem: it build counter in opposite order
+            postTraversal(node->children[1], buildSigTable, NULL); //BUGFIX: the last parameters are closer to $fp!!!
             preTraversalPostBeforeNext(node->children[2], buildLVTable, NULL, NULL);
             allocate(node);
 
@@ -77,6 +79,18 @@ void trav(ASTNode * node) {
             // step3: write code for function block
             applyBlock(node->children[2], label, retlabel, NULL);
 
+            // AT THIS POINT, no return statement was called
+            // if function is non-void-->trigger dynamic semantic error of no return runtime
+            assert(value->rettype != NULL);
+            if (strcmp(value->rettype, "bool") == 0 ||
+                strcmp(value->rettype, "int") == 0 ||
+                strcmp(value->rettype, "string") == 0
+            ) {
+                char * strlabel = addString(functionname);
+                fprintf(out, "\tla $a0, $noreturn1\nli $v0, 4\nsyscall\n");
+                fprintf(out, "\tla $a0, %s\nli $v0, 4\nsyscall\n", strlabel);
+                fprintf(out, "\tla $a0, $noreturn2\nli $v0, 4\nsyscall\n");
+            }
 
             fprintf(out, "%s:\n", retlabel);
             // step4: write code to deallocate stack frame
@@ -657,7 +671,10 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
         if (node->val.op == SUB) {
 
             // flip sign by doing -$t0 = 0 - $t0
-            writei("sub $t0, $zero, $t0");
+            // writei("sub $t0, $zero, $t0");
+            // writei("subu $t0, $zero, $t0"); // works
+            writei("negu $t0, $t0");
+
             return INT_TYPE;
         }
         // here it is to flip bool sign if UNARY sign IS '!'
@@ -711,11 +728,13 @@ void applyIntOp(Oper op) {
     switch (op)
     {
     case ADD: {
-        writei("add $t0, $t0, $t1");
+        // writei("add $t0, $t0, $t1");
+        writei("addu $t0, $t0, $t1");
         break;
     }
     case SUB: {
-        writei("sub $t0, $t0, $t1");
+        // writei("sub $t0, $t0, $t1");
+        writei("subu $t0, $t0, $t1");
         break;
     }
     case MULT: {
@@ -724,13 +743,17 @@ void applyIntOp(Oper op) {
         break;
     }
     case DIV: {
-        writei("div $t0, $t1");
+        // writei("div $t0, $t1");
+        writei("beq $t1, $zero, $div_err");
+        writei("divu $t0, $t1");
         writei("mflo $t0"); // mflo has quotient
         break;
     }
     case MOD: {
-        writei("div $t0, $t1");
-        writei("mfhi $t0"); // mflow has remainder
+        // writei("div $t0, $t1");
+        // writei("divu $t0, $t1");
+        // writei("mfhi $t0"); // mflow has remainder
+        writei("rem $t0, $t0, $t1");
         break;
     }
     default: {assert (0); break; }

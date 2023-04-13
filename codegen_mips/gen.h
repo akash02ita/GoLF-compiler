@@ -25,3 +25,5 @@ void buildLVTable(ASTNode * node);
 void addLV(ASTNode * node);
 void applyIntOp(Oper op);
 void applyRelOp(Oper op, int type);
+
+char * addString(char * buff);
