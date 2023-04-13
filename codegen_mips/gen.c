@@ -764,10 +764,22 @@ void applyIntOp(Oper op) {
         break;
     }
     case DIV: {
+        // NOTE: if divider is negative: it must be swapped to positive
         // writei("div $t0, $t1");
+        /*
+            problem: does not handle if divider is negative
         writei("beq $t1, $zero, $div_err");
-        writei("divu $t0, $t1");
+        // writei("divu $t0, $t1");
+        writei("div $t0, $t1");
         writei("mflo $t0"); // mflo has quotient
+        */
+       
+       writei("move $a0, $t0");
+       writei("move $a1, $t1");
+       writei("jal $div");
+       writei("move $t0, $v0 # copy return value");
+       
+
         break;
     }
     case MOD: {

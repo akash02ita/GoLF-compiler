@@ -301,3 +301,16 @@ $div_err:
     li $v0 4
     syscall
     j halt
+
+$div: # assume inputs are in $a0 and $a1, this part does not use stack
+    li $t0, 1 # the sign to mulitply with
+    bge $a1, $zero, $div_divide # if divider is not negative jump to dividing
+    negu $t0, $t0 # flip sign
+    negu $a1, $a1 # make dividier non-negative
+$div_divide:
+    beq $a1, $zero, $div_err
+    div $a0, $a1
+    # divu $a0, $a1  # this one does not handle problems if dividend in negative
+    mflo $v0 # mflo has quotient
+    mul $v0, $v0, $t0 # set appropriate sign
+    jr $ra

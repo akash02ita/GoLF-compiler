@@ -1,4 +1,4 @@
-Run started on Wed Apr 12 23:53:20 2023
+Run started on Wed Apr 12 23:57:47 2023
 
 Hostname: DESKTOP-HJC9LU0
 
@@ -461,7 +461,7 @@ Copyright 1990-2010, James R. Larus.
 All Rights Reserved.
 See the file README for a full copyright notice.
 Loaded: /usr/lib/spim/exceptions.s
-0
+-2147483648
 0
 
 
@@ -552,8 +552,7 @@ backslash t = [	]
 backslash n = [
 ]
 backslash f = []
-backslash r = [
-]
+backslash r = []
 backslash quote = ["]
 backslash backslash = [\]
 
@@ -810,8 +809,7 @@ var assigned empty string: len("") = 0, correct answer is 0
 yawn: len("boring string") = 13, correct answer is 13
 string with \n: len("Hello, world!
 ") = 14, correct answer is 14
-silly string: len("\"
-escape th	n(") = 16, correct answer is 16
+silly string: len("\"escape th	n(") = 16, correct answer is 16
 HEarth
 Hello, world!
 correct
@@ -1041,9 +1039,9 @@ See the file README for a full copyright notice.
 Loaded: /usr/lib/spim/exceptions.s
 x	y	x / y	x % y
 5	3	1	2
--5	3	1431655763	-2
-5	-3	0	2
--5	-3	0	-2
+-5	3	-1	-2
+5	-3	-1	2
+-5	-3	1	-2
 
 
 STDERR:
@@ -1199,5 +1197,5 @@ STDERR:
 
 RETURN CODE: 0
 
-Run ended on Wed Apr 12 23:53:46 2023
+Run ended on Wed Apr 12 23:58:14 2023
 
