@@ -17,14 +17,14 @@ void semantic(ASTNode * asttree) { // should annotate tree passed by ref
 
     // openscope file block
     addFileBlock();
-    printf("\t\t===== pass 1: forward ======\n");
+    // printf("\t\t===== pass 1: forward ======\n");
     preTraversal(asttree, pass1, NULL);
     closescope(1); // destroy file block (pass2 will remake the file block)
     addFileBlock(); // openscope file block (new and fresh!!)
-    printf("\t\t===== pass 1: reverse ======\n");
+    // printf("\t\t===== pass 1: reverse ======\n");
     postTraversal(asttree, pass1, NULL); // do not close file from this point as it will be reused in lookup
 
-    printf("\t\t===== pass 2: prepost ======\n");
+    // printf("\t\t===== pass 2: prepost ======\n");
     // prePostTraversal(asttree, pass2, pass2post, NULL); // problem: scopes are not closed on exit of function!
     preTraversalPostBeforeNext(asttree, pass2, pass2post, NULL); // solves problem
 
@@ -55,6 +55,7 @@ void addUniverseBlock() {
     hashMapInsert(universeScope, "prints", funcvalue);
     hashMapInsert(universeScope, "printi", funcvalue);
     hashMapInsert(universeScope, "printb", funcvalue);
+    hashMapInsert(universeScope, "printc", funcvalue);
     
     
     ScopeValue * constvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
@@ -164,7 +165,7 @@ void define(ASTNode * node) {
         value->line = node->children[0]->line;
 
         value->provenience = getStackProvenience(); // provenience requires to pop all scopes and add names!
-        // printf("the net provenience is %s\n", value->provenience); getchar();
+        // // printf("the net provenience is %s\n", value->provenience); getchar();
 
         hashMapInsert(currscope, name_key, value);
         node->sym = (void *) value;
@@ -288,12 +289,12 @@ int haltpass1(ASTNode * asttree) {
 void pass1(ASTNode * asttree) {
     if (asttree == NULL) return;
     if (asttree->node_type == Decl && asttree->kind.decl == GlobVarDecl) {
-        fprintf(stdout, "pass1 detected global var %s\n", asttree->children[0]->val.sval);
+        // fprintf(stdout, "pass1 detected global var %s\n", asttree->children[0]->val.sval);
         // do define of varname (function define handles type verification as well automatically)
         define(asttree);
     }
     if (asttree->node_type == Decl && asttree->kind.decl == FuncDecl) {
-        fprintf(stdout, "pass1 detected function %s\n", asttree->children[0]->val.sval);
+        // fprintf(stdout, "pass1 detected function %s\n", asttree->children[0]->val.sval);
         // do define of function ( define handles signature type verification as well automatically)
         define(asttree);
     }
@@ -305,30 +306,30 @@ void pass2(ASTNode * asttree) {
     assert (node != NULL);
     if (node->node_type == Decl && node->kind.decl == FuncDecl) {
         const char * functionname = node->children[0]->val.sval;
-        printf("Opening scope for functionname %s\n", functionname);
+        // printf("Opening scope for functionname %s\n", functionname);
         openscope(functionname);
     }
     else if (node->node_type == Stmt && node->kind.decl == IfStmt) {
-        printf("Opening scope for if statement\n");
+        // printf("Opening scope for if statement\n");
         openscope("if");
     }
     else if (node->node_type == Stmt && node->kind.decl == IfElseStmt) {
-        printf("Opening scope for ifelse statement\n");
+        // printf("Opening scope for ifelse statement\n");
         openscope("ifelse");
     }
     else if (node->node_type == Stmt && node->kind.decl == Block) {
         if (nested_block > 0) { // function starts with a body as the 1st block. but must prevent that to openscope in that case
-            printf("Opening scope for Block statement %d\n", nested_block);
+            // printf("Opening scope for Block statement %d\n", nested_block);
             openscope("block");
         }
         nested_block++;
     }
     else if (node->node_type == Decl && node->kind.decl == Signature) {
-        printf("\tPass2 found signature %s\n", node->children[0]->val.sval);
+        // printf("\tPass2 found signature %s\n", node->children[0]->val.sval);
         define(node); // define the signature of parameters in body
     }
     else if (node->node_type == Decl && node->kind.decl == VarDecl) {
-        printf("\tPass2 found local var %s\n", node->children[0]->val.sval);
+        // printf("\tPass2 found local var %s\n", node->children[0]->val.sval);
         define(node);
     }
     else if (nested_block > 0 && node->node_type == Expr && node->kind.exp == Id) {
@@ -374,22 +375,22 @@ void pass2(ASTNode * asttree) {
 void pass2post(ASTNode * node) {
     if (node->node_type == Decl && node->kind.decl == FuncDecl) {
         const char * functionname = node->children[0]->val.sval;
-        printf("Closing scope for functionname %s\n", functionname);
+        // printf("Closing scope for functionname %s\n", functionname);
         closescope(0); // close function body scope without losing data!
     }
     else if (node->node_type == Stmt && node->kind.decl == IfStmt) {
-        printf("Closing scope for if statement\n");
+        // printf("Closing scope for if statement\n");
         closescope(0);
     }
     else if (node->node_type == Stmt && node->kind.decl == IfElseStmt) {
-        printf("Closing scope for ifelse statement\n");
+        // printf("Closing scope for ifelse statement\n");
         closescope(0);
     }
     else if (node->node_type == Stmt && node->kind.decl == Block) {
         nested_block--;
         if (nested_block > 0)
         {
-            printf("Closing scope for Block statement %d\n", nested_block);
+            // printf("Closing scope for Block statement %d\n", nested_block);
             // printTree(node, stdout, 4);
             closescope(0);
         }

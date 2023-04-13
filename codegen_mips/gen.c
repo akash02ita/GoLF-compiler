@@ -15,7 +15,7 @@ void gencode(ASTNode * tree, FILE * outcode) {
     char ch;
     while ((ch = fgetc(template)) != EOF)
         fputc(ch, out);
-    
+    fclose(template);
 }
 void trav(ASTNode * node) {
     while (node != NULL)
@@ -72,7 +72,7 @@ void trav(ASTNode * node) {
 
             char * retlabel = strdup(label);
             buffsize = mystrcat(&retlabel, "_ret", buffsize);
-            printf("return label is %s:\n", retlabel);
+            // printf("return label is %s:\n", retlabel);
 
             // step3: write code for function block
             applyBlock(node->children[2], label, retlabel, NULL);
@@ -104,7 +104,8 @@ void allocate(ASTNode * funcnode) {
     // now allocate LVs (local vars)
     lvcounter = -8-4; // jump fp, lr copies and -4 to use the appropriate top
     preTraversalPostBeforeNext(funcnode->children[2], addLV, NULL, NULL);
-    printf("Allocations completd ------------------\n");
+    // printf("Allocations completd ------------------\n");
+    // fprintf(stderr, "Allocations completd ------------------\n");
     
 }
 
@@ -323,14 +324,21 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             size = mystrcat(&unique_name, value->provenience, size);
 
             int * offset = hashMapFind(table, unique_name);
-            assert(offset != NULL); // must be defined by buildTable
+            
             // fprintf(stderr, "good news! Found assignment for %s of type %s with offset $fp+ %d\n", varname, vartype, *offset); getchar();
 
             ASTNode * rhs = blocknode->children[1];
             // $t0 will have result of riht hand side expression
             evalExpression(rhs, NULL, NULL);
             // write code for assignment
-            fprintf(out, "\tsw $t0, %d($fp) # assignment for %s %s\n", *offset, varname, vartype);
+            if (offset == NULL) // implies GLOBAL_VAR
+            {
+                fprintf(out, "\tla $t1, %s\n", unique_name);
+                fprintf(out, "\tsw $t0, 0($t1)\n # assignment glob var %s\n", varname);
+            }
+            else { // local variable
+                fprintf(out, "\tsw $t0, %d($fp) # assignment for %s %s\n", *offset, varname, vartype);
+            }
 
             break;
         }
