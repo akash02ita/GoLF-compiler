@@ -7,6 +7,7 @@
 void gencode(ASTNode * node, FILE * outcode);
 void trav(ASTNode * node); // traverse thorugh toplevedeclr
 void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * breaklabel);
+void applyFunctionCall(ASTNode * funccallnode);
 void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel);
 
 void allocate(ASTNode * funcnode);

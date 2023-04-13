@@ -25,6 +25,7 @@ func main2(arg1 int, arg2 string) {
     var int bool
     var test string
     test = "hello\n"
+    prints(test, 2342, test)
 
     1+2
     "hello"

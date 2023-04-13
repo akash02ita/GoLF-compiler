@@ -338,6 +338,12 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             // only FuncCall must be allowed
             // rest is ignored or can be optional (whichever is easier)
                 // like 1+2, var+var2 sitting there for nothing. it does nothing to the actual logic of code. So they can be ignored
+            ASTNode * expr = blocknode->children[0];
+            assert (expr != NULL);
+            if (expr->node_type == Expr && expr->kind.stmt == FuncCall) {
+                // getchar();
+                applyFunctionCall(expr);
+            }
             break;
         }
         default:
@@ -350,6 +356,25 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
 
 }
 
+void applyFunctionCall(ASTNode * funccallnode) {
+    assert (funccallnode != NULL);
+    assert (funccallnode->node_type == Expr && funccallnode->kind.stmt == FuncCall);
+    char * funcname = funccallnode->children[0]->val.sval;
+    int argnum = 0;
+    ASTNode * actual = funccallnode->children[1]->children[0];
+    while (actual != NULL) {
+        // if (actual->node_type == Expr && actual->kind.exp == Id) {
+
+        // }
+        evalExpression(actual, NULL, NULL);
+        argnum++;
+        fprintf(out, "\t# Adding arg #%d in functioncall %s()\n", argnum, funcname);
+        writei("addi $sp, $sp, -4");
+        writei("sw $t0, 0($sp)");
+
+        actual = actual->next;
+    }
+}
 
 void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
 

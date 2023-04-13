@@ -71,6 +71,15 @@ main2:
 	sw $t0, 0($sp)
 	sw $t0, 4($fp) # assignment for arg2 string
 	sw $t0, -16($fp) # assignment for test string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	# Adding arg #2 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	# Adding arg #3 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
 main2_file_ret:
 	# Dealloc int_file_main2
 	add $sp, $sp, 4
