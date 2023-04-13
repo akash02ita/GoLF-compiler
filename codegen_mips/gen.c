@@ -377,5 +377,54 @@ void applyFunctionCall(ASTNode * funccallnode) {
 }
 
 void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
+    if (node == NULL) return;
 
+    // basecase1: literal
+    if (node->node_type == Expr && node->kind.exp == BasicLit) {
+        if (node->type_name == INT) {
+            
+        }
+        else if (node->type_name == STR) { 
+
+        } else { assert (0); }
+    }
+
+    // base case2: identifier
+    if (node->node_type == Expr && node->kind.exp == Id) {
+        // check if global var or local
+
+        // case global: get address of label
+
+        // case local: use table hashmap to get offset
+    }
+
+    // case binary op
+    if (node->node_type == Expr && node->kind.exp == BinaryExp) {
+        // Remember for || and && there is SHORT CIRCUIT
+            // must create branchcounter labels for it
+        // Remember for comparing operators
+            // int == int: easy
+            // bool == bool: easy
+            // string == string: not easy
+                // but can be made easier
+                // in TEMPLATE.s hardcode a subroutine to compare strings
+                // the subroutine will return true or false
+                // note: strings are compared lexicographically
+    }
+
+    // case unary op
+    if (node->node_type == Expr && node->kind.exp == UnaryExp) {
+        // here it is flip sign
+
+        // evaluate nested expression and then negate it
+    }
+
+    // case function call
+    if (node->node_type == Expr && node->kind.exp == FuncCall) {
+        applyFunctionCall(node);
+    }
+
+
+    // by this point all cases should be covered
+    
 }
