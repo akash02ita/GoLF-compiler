@@ -77,24 +77,42 @@ string_2: .byte  10, 0
 	jal prints
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
+	li $t0, 2147483647
+	# Adding arg #1 in functioncall printi()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printi
+	# Removing arg #2 in functioncall printi()
+	addi $sp, $sp, 4
 .data
 .align 2
-string_3: .byte  104, 111, 108, 97, 32, 118, 97, 109, 111, 115, 10, 0
+string_3: .byte  45, 45, 45, 45, 45, 32, 50, 49, 52, 55, 52, 56, 51, 54, 52, 55, 32, 104, 97, 115, 32, 98, 101, 101, 110, 32, 112, 114, 105, 110, 116, 101, 100, 33, 10, 0
 .text
-	la $t0, string_3 # loading address of 1st char of string `hola vamos\n`
+	la $t0, string_3 # loading address of 1st char of string `----- 2147483647 has been printed!\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_4: .byte  104, 111, 108, 97, 32, 118, 97, 109, 111, 115, 10, 0
+.text
+	la $t0, string_4 # loading address of 1st char of string `hola vamos\n`
 	la $t1, glob_file
 	sw $t0, 0($t1) # assignment glob var glob
 .data
 .align 2
-string_4: .byte  10, 9, 100, 111, 32, 110, 111, 116, 32, 112, 114, 105, 110, 116, 32, 111, 117, 116, 115, 105, 100, 101, 32, 115, 99, 111, 112, 101, 32, 116, 104, 105, 115, 10, 0
+string_5: .byte  10, 9, 100, 111, 32, 110, 111, 116, 32, 112, 114, 105, 110, 116, 32, 111, 117, 116, 115, 105, 100, 101, 32, 115, 99, 111, 112, 101, 32, 116, 104, 105, 115, 10, 0
 .text
-	la $t0, string_4 # loading address of 1st char of string `\n\tdo not print outside scope this\n`
+	la $t0, string_5 # loading address of 1st char of string `\n\tdo not print outside scope this\n`
 	sw $t0, -16($fp) # assignment for x string
 .data
 .align 2
-string_5: .byte  104, 101, 108, 108, 111, 32, 116, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116, 10, 0
+string_6: .byte  104, 101, 108, 108, 111, 32, 116, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116, 10, 0
 .text
-	la $t0, string_5 # loading address of 1st char of string `hello this is a test\n`
+	la $t0, string_6 # loading address of 1st char of string `hello this is a test\n`
 	sw $t0, -20($fp) # assignment for y string
 	lw $t0, -16($fp) # load content of x string
 	# Adding arg #1 in functioncall prints()
@@ -108,9 +126,9 @@ string_5: .byte  104, 101, 108, 108, 111, 32, 116, 104, 105, 115, 32, 105, 115, 
 	sw $t0, 0($t1) # assignment glob var integer
 .data
 .align 2
-string_6: .byte  119, 104, 97, 116, 101, 118, 101, 114, 0
+string_7: .byte  119, 104, 97, 116, 101, 118, 101, 114, 0
 .text
-	la $t0, string_6 # loading address of 1st char of string `whatever`
+	la $t0, string_7 # loading address of 1st char of string `whatever`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -119,9 +137,9 @@ string_6: .byte  119, 104, 97, 116, 101, 118, 101, 114, 0
 	addi $sp, $sp, 4
 .data
 .align 2
-string_7: .byte  97, 110, 111, 116, 104, 101, 114, 32, 115, 99, 111, 112, 101, 45, 45, 45, 45, 10, 0
+string_8: .byte  97, 110, 111, 116, 104, 101, 114, 32, 115, 99, 111, 112, 101, 45, 45, 45, 45, 10, 0
 .text
-	la $t0, string_7 # loading address of 1st char of string `another scope----\n`
+	la $t0, string_8 # loading address of 1st char of string `another scope----\n`
 	sw $t0, -24($fp) # assignment for x string
 	lw $t0, -24($fp) # load content of x string
 	# Adding arg #1 in functioncall prints()
@@ -169,9 +187,9 @@ string_7: .byte  97, 110, 111, 116, 104, 101, 114, 32, 115, 99, 111, 112, 101, 4
 	addi $sp, $sp, 4
 .data
 .align 2
-string_8: .byte  45, 45, 45, 45, 10, 0
+string_9: .byte  45, 45, 45, 45, 10, 0
 .text
-	la $t0, string_8 # loading address of 1st char of string `----\n`
+	la $t0, string_9 # loading address of 1st char of string `----\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)

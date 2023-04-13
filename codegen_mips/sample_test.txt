@@ -10,6 +10,7 @@ func main() {
     prints("\n")
     printi(integer2)
     prints("\n")
+    printi(2147483647); prints("----- 2147483647 has been printed!\n")
     {
         var x string
         glob = "hola vamos\n"
