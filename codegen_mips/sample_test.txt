@@ -1,36 +1,15 @@
-var x string
-var glob string
-var integer int
 func main() {
-    var integer2 int
+    var itworks int
 
-    integer2 = 5
-	x = "Hello, world!\n"
-    printi(integer)
+    itworks = 1234
+
+    printi(itworks); prints("\n\n")
+    itworks = -itworks
+
+    printi(--42)
     prints("\n")
-    printi(integer2)
-    prints("\n")
-    printi(2147483647); prints("----- 2147483647 has been printed!\n")
-    {
-        var x string
-        glob = "hola vamos\n"
-        x = "\n\tdo not print outside scope this\n"
-        var y string
-        y = "hello this is a test\n"
-        prints(x)
-        integer = 234324
-        prints("whatever")
-        {
-            var x string
-            x = "another scope----\n"
-            prints(x)
-            prints(y)
-        }
-        prints(y)
-        prints(x)
-        prints(glob)
-    }
-    printi(integer); prints("----\n")
-	prints(x)
-    prints(glob)
+    printi(-42)
+    prints("\n\n")
+
+    printi(itworks); prints("\n\n")
 }

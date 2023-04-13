@@ -488,6 +488,31 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
                 // in TEMPLATE.s hardcode a subroutine to compare strings
                 // the subroutine will return true or false
                 // note: strings are compared lexicographically
+        switch (node->val.op)
+        {
+            case ADD:
+            case SUB:
+            case MULT:
+            case DIV:
+            case MOD: {
+                break;
+            }
+            case LT:
+            case GT:
+            case LTE:
+            case GTE:
+            case EQEQ:
+            case NEQ: {
+                break;
+            }
+            case EMARK: {
+                break;
+            }
+            case AND:
+            case OR: {
+                break;
+            }
+        }
     }
 
     // case unary op
@@ -495,6 +520,9 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
         // here it is flip sign
 
         // evaluate nested expression and then negate it
+        evalExpression(node->children[0], truebranchlabel, falsebranchlabel);
+        // flip sign by doing -$t0 = 0 - $t0
+        writei("sub $t0, $zero, $t0");
     }
 
     // case function call
