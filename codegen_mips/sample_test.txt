@@ -25,9 +25,20 @@ func main2(arg1 int, arg2 string) {
     var int bool
     var test string
     test = "hello\n"
+    test = ""
     prints(test, 2342, test)
+    mains()
 
     1+2
     "hello"
 }
 
+
+// uncomment these 2 lines below: it won't conflict with original label in TEMPLATE.s
+//   since we are adding prefix _file using provenience
+//func prints(test int) {
+//}
+    
+func mains() {
+
+}

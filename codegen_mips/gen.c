@@ -60,10 +60,10 @@ void trav(ASTNode * node) {
             char * label = (char *) malloc(buffsize); label[0] = '\0';
             buffsize = mystrcat(&label, functionname, buffsize);
             buffsize = mystrcat(&label, value->provenience, buffsize);
-            printf("label name is %s\n", label);
+            // printf("label name is %s\n", label); getchar();
 
             // step1: add LABELNAMe of function
-            fprintf(out, ".text\n"); fprintf(out, "%s:\n", functionname);
+            fprintf(out, ".text\n"); fprintf(out, "%s:\n", label);
             // step2: write code for STACK frame allocation
             sigcounter = 0; lvcounter = -8-4;
             preTraversalPostBeforeNext(node->children[1], buildSigTable, NULL, NULL);
@@ -363,9 +363,6 @@ void applyFunctionCall(ASTNode * funccallnode) {
     int argnum = 0;
     ASTNode * actual = funccallnode->children[1]->children[0];
     while (actual != NULL) {
-        // if (actual->node_type == Expr && actual->kind.exp == Id) {
-
-        // }
         evalExpression(actual, NULL, NULL);
         argnum++;
         fprintf(out, "\t# Adding arg #%d in functioncall %s()\n", argnum, funcname);
@@ -374,18 +371,75 @@ void applyFunctionCall(ASTNode * funccallnode) {
 
         actual = actual->next;
     }
+    ScopeValue * value = (ScopeValue *) funccallnode->sym;
+    assert (value != NULL);
+    int buffsize = 1;
+    char * label = (char *) malloc(buffsize); label[0] = '\0';
+    buffsize = mystrcat(&label, funcname, buffsize);
+    buffsize = mystrcat(&label, value->provenience, buffsize);
+    // printf("label name is %s\n", label); getchar();
+    fprintf(out, "\tjal %s\n", label);
+
+    // do not forget to also deallocate functoin stack memory!
+    actual = funccallnode->children[1]->children[0];
+    while (actual != NULL) {
+        argnum++;
+        fprintf(out, "\t# Removing arg #%d in functioncall %s()\n", argnum, funcname);
+        writei("addi $sp, $sp, 4");
+        actual = actual->next;
+    }
+
 }
 
+int stringcounter = 0;
+char * addString(char * buff) {
+    char * label = generateLabel("string", stringcounter);
+    fprintf(out,".data\n.align 2\n%s: .byte ", label);
+    while (*buff) {
+        char byte;
+        if (*buff == '\\') {
+            // we must have an escape char at this point
+            buff++;
+            switch (*buff)
+            {
+            case 'b': {byte = '\b'; break;}
+            case 'f': {byte = '\f'; break;}
+            case 'n': {byte = '\n'; break;}
+            case 'r': {byte = '\r'; break;}
+            case 't': {byte = '\t'; break;}
+            case '\\': {byte = '\\'; break;}
+            case '\"': {byte = '\"'; break;}            
+            default: { assert (0); break; } // should never happen
+            }
+        } else { byte = *buff; }
+        fprintf(out, " %d,", byte);
+        buff++;
+    }
+    fprintf(out, " 0\n.text\n");
+    stringcounter++;
+
+    return label; // returns generated strying label name
+}
 void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
     if (node == NULL) return;
 
     // basecase1: literal
     if (node->node_type == Expr && node->kind.exp == BasicLit) {
         if (node->type_name == INT) {
-            
+            int immediate = node->val.ival;
+            fprintf(out, "\tli $t0, %d\n", immediate);
         }
         else if (node->type_name == STR) { 
-
+            char * buff = strdup(node->val.sval);
+            // remove opening and closing quotation marks
+            assert (strlen(buff) >= 2); // scanner lex.l does not remove openign and closing ""
+            char * stringonly = buff+1;
+            stringonly[strlen(stringonly)-1] = '\0';
+            
+            char * label = addString(stringonly);
+            fprintf(out, "\tla $t0, %s # loading address of 1st char of string `%s`\n", label, stringonly);
+            free(buff); // not needed anymore
+            free(label); // free as not needed anymore
         } else { assert (0); }
     }
 

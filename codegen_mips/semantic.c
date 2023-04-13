@@ -42,6 +42,7 @@ void addUniverseBlock() {
 
     // predeclared types
     ScopeValue * typevalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+    typevalue->provenience = "";
     typevalue->istype = true; typevalue->isconst = false; typevalue->isfunc = false; typevalue->isid = false;
     hashMapInsert(universeScope, "void", typevalue);
     hashMapInsert(universeScope, "string", typevalue);
@@ -49,6 +50,7 @@ void addUniverseBlock() {
     hashMapInsert(universeScope, "bool", typevalue);
 
     ScopeValue * funcvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+    funcvalue->provenience = "";
     funcvalue->istype = false; funcvalue->isconst = false; funcvalue->isfunc = true; funcvalue->isid = false;
     hashMapInsert(universeScope, "prints", funcvalue);
     hashMapInsert(universeScope, "printi", funcvalue);
@@ -56,6 +58,7 @@ void addUniverseBlock() {
     
     
     ScopeValue * constvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
+    constvalue->provenience = "";
     constvalue->istype = false; constvalue->isconst = true; constvalue->isfunc = false; constvalue->isid = false;
     hashMapInsert(universeScope, "true", constvalue);
     hashMapInsert(universeScope, "false", constvalue);
@@ -170,8 +173,11 @@ void define(ASTNode * node) {
         value->isfunc = true;
         value->line = node->children[0]->line;
         // value->provenience = "_file"; // global scope in file block
-        value->provenience = getStackProvenience();
+        // only "main" remains without any prefix
+        
         char * functionname = node->children[0]->val.sval;
+        if (strcmp(functionname, "main") != 0) value->provenience = getStackProvenience();
+        else { value->provenience = strdup(""); }
 
         // verify signature proper types (so that every parameter has valid type)
         ASTNode * sig = node->children[1];
@@ -356,6 +362,7 @@ void pass2(ASTNode * asttree) {
             fprintf(stderr, "error: pass2: `%s` is not a function at or near line %d\n", functionname, node->line);
             exit(EXIT_FAILURE);
         }
+        node->sym = (void *) lookup(functionname);
     }
     // DONE: if, for statement to check (check if these block allow something)
     // if  ---> new scope

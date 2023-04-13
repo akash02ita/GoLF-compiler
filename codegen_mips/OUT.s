@@ -1,13 +1,4 @@
 # mips code
-.data
-.align 2
-anotherglobvar_file:	.word $string_empty
-.data
-.align 2
-anotherglobvar2_file:	.word 0
-.data
-.align 2
-globalvar_file:	.word 0
 .text
 main:
 	# Save old fp and lr
@@ -16,75 +7,18 @@ main:
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	addi $fp, $sp, 8
-	# Alloc int_file_main
-	addi $sp, $sp, -4  # add memory for lv
-	sw $zero, 0($sp)
-	# Alloc test_file_main
-	addi $sp, $sp, -4  # add memory for lv
-	la $t0, $string_empty
-	sw $t0, 0($sp)
-	sw $t0, -16($fp) # assignment for test string
-ifbody_0:
-ifbody_1:
-ifelse_1:
-ifbody_2:
-ifelse_2:
-ifelse_0:
-forpretest_0:
-forloop_0:
-forpretest_1:
-forloop_1:
-	j forexitloop_1
-	sw $t0, -16($fp) # assignment for test string
-	j forpretest_1
-forexitloop_1:
-	move $v0, $t0
-	j main_file_ret
-	j forpretest_0
-forexitloop_0:
-main_file_ret:
-	# Dealloc int_file_main
-	add $sp, $sp, 4
-	# Dealloc test_file_main
-	add $sp, $sp, 4
-	# Restore old fp and lr
-	lw $ra, 0($sp)
-	addi $sp, $sp, 4
-	lw $fp, 0($sp)
-	addi $sp, $sp, 4
-	# return to caller
-	jr $ra
+.data
+.align 2
+string_0: .byte  72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33, 10, 0
 .text
-main2:
-	# Save old fp and lr
-	addi $sp, $sp, -4
-	sw $fp, 0($sp)
-	addi $sp, $sp, -4
-	sw $ra, 0($sp)
-	addi $fp, $sp, 8
-	# Alloc int_file_main2
-	addi $sp, $sp, -4  # add memory for lv
-	sw $zero, 0($sp)
-	# Alloc test_file_main2
-	addi $sp, $sp, -4  # add memory for lv
-	la $t0, $string_empty
-	sw $t0, 0($sp)
-	sw $t0, 4($fp) # assignment for arg2 string
-	sw $t0, -16($fp) # assignment for test string
+	la $t0, string_0 # loading address of 1st char of string `Hello, world!\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-	# Adding arg #2 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	# Adding arg #3 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-main2_file_ret:
-	# Dealloc int_file_main2
-	add $sp, $sp, 4
-	# Dealloc test_file_main2
-	add $sp, $sp, 4
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+main_ret:
 	# Restore old fp and lr
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4
