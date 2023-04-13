@@ -433,6 +433,9 @@ int branchcounter = 0;
 #define STR_TYPE 20
 #define BOOL_TYPE 30
 int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
+    /*
+        NOTE: whereeveer it returns boolean, the true and false branching must be done if it has to be
+    */
     if (node == NULL) return -1;
 
     // basecase1: literal
@@ -483,7 +486,17 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             }
             if (strcmp(vartype, "int") == 0) return INT_TYPE;
             else if (strcmp(vartype, "string") == 0) return STR_TYPE;
-            else if (strcmp(vartype, "bool") == 0) return BOOL_TYPE;
+            else if (strcmp(vartype, "bool") == 0) {
+                if (truebranchlabel != NULL) {
+                    // true means != 0
+                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                }
+                if (falsebranchlabel != NULL) {
+                    // false mean == 0
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                }
+                return BOOL_TYPE;
+            }
             else assert (0);
         }
         else if (value->isconst) {
@@ -495,6 +508,14 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 writei("move $t0, $zero   # constant write false");
 
             } else assert (0);
+            if (truebranchlabel != NULL) {
+                // true means != 0
+                fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+            }
+            if (falsebranchlabel != NULL) {
+                // false mean == 0
+                fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+            }
             return BOOL_TYPE;
         } else assert (0);
     }
@@ -540,12 +561,58 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append rhs result"); // append word on stack
                 assert (typeleft == typeright);
                 applyRelOp(node->val.op, typeleft);
+                if (truebranchlabel != NULL) {
+                    // true means != 0
+                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                }
+                if (falsebranchlabel != NULL) {
+                    // false mean == 0
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                }
                 return BOOL_TYPE;
                 break;
             }
-            case AND:
+            case AND: {
+                // short circuit:
+                char * skiplabel = generateLabel("skipand_false", branchcounter);
+                branchcounter++;
+                fprintf(out, "\tbeq $t0, $zero, %s\n", skiplabel); // if false then jump
+                evalExpression(right, truebranchlabel, falsebranchlabel);
+                writei("lw $t1, 0($sp)");
+                writei("and $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
+                fprintf(out, "%s:\n", skiplabel);
+                writei("add $sp, $sp, 4"); // remove left result on top of stack
+                free(skiplabel);
+                if (truebranchlabel != NULL) {
+                    // true means != 0
+                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                }
+                if (falsebranchlabel != NULL) {
+                    // false mean == 0
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                }
+                return BOOL_TYPE;
+                break;
+            }
             case OR: {
-                // TODO:
+                // short circuit:
+                char * skiplabel = generateLabel("skipor_true", branchcounter);
+                branchcounter++;
+                fprintf(out, "\tbne $t0, $zero, %s\n", skiplabel); // if true then jump
+                evalExpression(right, truebranchlabel, falsebranchlabel);
+                writei("lw $t1, 0($sp)");
+                writei("or $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
+                fprintf(out, "%s:\n", skiplabel);
+                writei("add $sp, $sp, 4"); // remove left result on top of stack
+                free(skiplabel);
+                if (truebranchlabel != NULL) {
+                    // true means != 0
+                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                }
+                if (falsebranchlabel != NULL) {
+                    // false mean == 0
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                }
                 return BOOL_TYPE;
                 break;
             }
@@ -570,6 +637,14 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             // xor can be usefule to toogle 0 to 1 or vice versa
             writei("li $t1, 1"); // $t0 xor 1 will toogle bit
             writei("xor $t0, $t0, $t1");
+            if (truebranchlabel != NULL) {
+                // true means != 0
+                fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+            }
+            if (falsebranchlabel != NULL) {
+                // false mean == 0
+                fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+            }
             return BOOL_TYPE;
         } else assert(0);
         return -1;

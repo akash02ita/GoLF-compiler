@@ -7,39 +7,237 @@ main:
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	addi $fp, $sp, 8
-	# Alloc x_file_main
-	addi $sp, $sp, -4  # add memory for lv
-	sw $zero, 0($sp)
-	# Alloc y_file_main
-	addi $sp, $sp, -4  # add memory for lv
-	sw $zero, 0($sp)
-	# Alloc str_file_main
-	addi $sp, $sp, -4  # add memory for lv
-	la $t0, $string_empty
-	sw $t0, 0($sp)
-	li $t0, 1 # base case int literal
+	move $t0, $zero   # constant write false
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-	li $t0, 4 # base case int literal
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append lhs result
-	# pop 2 words apply op
-	lw $t0, 0($sp)
-	addi $sp, $sp, 4
+	beq $t0, $zero, skipand_false_0
+	move $t0, $zero   # constant write false
 	lw $t1, 0($sp)
-	addi $sp, $sp, 4
-	add $t0, $t0, $t1
+	and $t0, $t1, $t0
+skipand_false_0:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-	li $t0, 1 # base case int literal
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_0: .byte  9, 99, 104, 101, 99, 107, 32, 97, 110, 100, 10, 0
+.text
+	la $t0, string_0 # loading address of 1st char of string `\tcheck and\n`
+	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append lhs result
-	# pop 2 words apply op
-	lw $t0, 0($sp)
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
+	li $t0, 1   # constant write true
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	beq $t0, $zero, skipand_false_1
+	move $t0, $zero   # constant write false
 	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_1:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
 	addi $sp, $sp, 4
-	add $t0, $t0, $t1
+.data
+.align 2
+string_1: .byte  9, 99, 104, 101, 99, 107, 32, 97, 110, 100, 10, 0
+.text
+	la $t0, string_1 # loading address of 1st char of string `\tcheck and\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	move $t0, $zero   # constant write false
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	beq $t0, $zero, skipand_false_2
+	li $t0, 1   # constant write true
+	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_2:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_2: .byte  9, 99, 104, 101, 99, 107, 32, 97, 110, 100, 10, 0
+.text
+	la $t0, string_2 # loading address of 1st char of string `\tcheck and\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	li $t0, 1   # constant write true
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	beq $t0, $zero, skipand_false_3
+	li $t0, 1   # constant write true
+	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_3:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_3: .byte  9, 99, 104, 101, 99, 107, 32, 97, 110, 100, 10, 0
+.text
+	la $t0, string_3 # loading address of 1st char of string `\tcheck and\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_4: .byte  10, 0
+.text
+	la $t0, string_4 # loading address of 1st char of string `\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	move $t0, $zero   # constant write false
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	bne $t0, $zero, skipor_true_4
+	move $t0, $zero   # constant write false
+	lw $t1, 0($sp)
+	or $t0, $t1, $t0
+skipor_true_4:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_5: .byte  9, 99, 104, 101, 99, 107, 32, 111, 114, 10, 0
+.text
+	la $t0, string_5 # loading address of 1st char of string `\tcheck or\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	li $t0, 1   # constant write true
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	bne $t0, $zero, skipor_true_5
+	move $t0, $zero   # constant write false
+	lw $t1, 0($sp)
+	or $t0, $t1, $t0
+skipor_true_5:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_6: .byte  9, 99, 104, 101, 99, 107, 32, 111, 114, 10, 0
+.text
+	la $t0, string_6 # loading address of 1st char of string `\tcheck or\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	move $t0, $zero   # constant write false
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	bne $t0, $zero, skipor_true_6
+	li $t0, 1   # constant write true
+	lw $t1, 0($sp)
+	or $t0, $t1, $t0
+skipor_true_6:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_7: .byte  9, 99, 104, 101, 99, 107, 32, 111, 114, 10, 0
+.text
+	la $t0, string_7 # loading address of 1st char of string `\tcheck or\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	li $t0, 1   # constant write true
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	bne $t0, $zero, skipor_true_7
+	li $t0, 1   # constant write true
+	lw $t1, 0($sp)
+	or $t0, $t1, $t0
+skipor_true_7:
+	add $sp, $sp, 4
+	# Adding arg #1 in functioncall printb()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printb
+	# Removing arg #2 in functioncall printb()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_8: .byte  9, 99, 104, 101, 99, 107, 32, 111, 114, 10, 0
+.text
+	la $t0, string_8 # loading address of 1st char of string `\tcheck or\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_9: .byte  10, 0
+.text
+	la $t0, string_9 # loading address of 1st char of string `\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	li $t0, 1 # base case int literal
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
 	li $t0, 2 # base case int literal
@@ -53,38 +251,7 @@ main:
 	add $t0, $t0, $t1
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-	li $t0, 1 # base case int literal
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append lhs result
-	# pop 2 words apply op
-	lw $t0, 0($sp)
-	addi $sp, $sp, 4
-	lw $t1, 0($sp)
-	addi $sp, $sp, 4
-	add $t0, $t0, $t1
-	sw $t0, -12($fp) # assignment for x int
-	lw $t0, -12($fp) # load content of x int
-	# Adding arg #1 in functioncall printi()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal printi
-	# Removing arg #2 in functioncall printi()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_0: .byte  10, 0
-.text
-	la $t0, string_0 # loading address of 1st char of string `\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-	lw $t0, -12($fp) # load content of x int
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	li $t0, 5 # base case int literal
+	li $t0, 3 # base case int literal
 	addi $sp, $sp, -4
 	sw $t0, 0($sp) # append rhs result
 	jal inteqeq
@@ -92,118 +259,14 @@ string_0: .byte  10, 0
 	# pop 2 words rel op
 	addi $sp, $sp, 4
 	addi $sp, $sp, 4
-	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-	jal printb
-	# Removing arg #2 in functioncall printb()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_1: .byte  9, 108, 105, 110, 101, 32, 55, 10, 0
-.text
-	la $t0, string_1 # loading address of 1st char of string `\tline 7\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-.data
-.align 2
-string_2: .byte  0
-.text
-	la $t0, string_2 # loading address of 1st char of string ``
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal streqeq
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	# Adding arg #1 in functioncall printb()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal printb
-	# Removing arg #2 in functioncall printb()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_3: .byte  9, 108, 105, 110, 101, 32, 49, 48, 10, 0
-.text
-	la $t0, string_3 # loading address of 1st char of string `\tline 10\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_4: .byte  104, 101, 108, 108, 111, 0
-.text
-	la $t0, string_4 # loading address of 1st char of string `hello`
-	sw $t0, -20($fp) # assignment for str string
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-.data
-.align 2
-string_5: .byte  104, 101, 108, 108, 111, 0
-.text
-	la $t0, string_5 # loading address of 1st char of string `hello`
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal streqeq
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	# Adding arg #1 in functioncall printb()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal printb
-	# Removing arg #2 in functioncall printb()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_6: .byte  9, 108, 105, 110, 101, 32, 49, 50, 10, 0
-.text
-	la $t0, string_6 # loading address of 1st char of string `\tline 12\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-.data
-.align 2
-string_7: .byte  104, 101, 108, 108, 111, 0
-.text
-	la $t0, string_7 # loading address of 1st char of string `hello`
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal streqeq
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
+	beq $t0, $zero, skipand_false_8
 	li $t0, 1   # constant write true
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal inteqeq
-	move $t0, $v0    #  bool relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
+	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_8:
+	add $sp, $sp, 4
 	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -212,72 +275,42 @@ string_7: .byte  104, 101, 108, 108, 111, 0
 	addi $sp, $sp, 4
 .data
 .align 2
-string_8: .byte  9, 108, 105, 110, 101, 49, 52, 10, 0
+string_10: .byte  9, 108, 105, 110, 101, 32, 51, 52, 10, 0
 .text
-	la $t0, string_8 # loading address of 1st char of string `\tline14\n`
+	la $t0, string_10 # loading address of 1st char of string `\tline 34\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
 	jal prints
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-.data
-.align 2
-string_9: .byte  104, 101, 108, 108, 111, 0
-.text
-	la $t0, string_9 # loading address of 1st char of string `hello`
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal streqeq
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	li $t0, 1   # constant write true
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal intneq
-	move $t0, $v0    #  bool relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	# Adding arg #1 in functioncall printb()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal printb
-	# Removing arg #2 in functioncall printb()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_10: .byte  9, 108, 105, 110, 101, 49, 53, 10, 0
-.text
-	la $t0, string_10 # loading address of 1st char of string `\tline15\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
 .data
 .align 2
 string_11: .byte  104, 101, 108, 108, 111, 0
 .text
 	la $t0, string_11 # loading address of 1st char of string `hello`
 	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+.data
+.align 2
+string_12: .byte  104, 101, 108, 108, 111, 0
+.text
+	la $t0, string_12 # loading address of 1st char of string `hello`
+	addi $sp, $sp, -4
 	sw $t0, 0($sp) # append rhs result
-	jal strlte
+	jal streqeq
 	move $t0, $v0   # string relop result
 	# pop 2 words rel op
 	addi $sp, $sp, 4
 	addi $sp, $sp, 4
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	beq $t0, $zero, skipand_false_9
+	li $t0, 1   # constant write true
+	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_9:
+	add $sp, $sp, 4
 	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -286,39 +319,24 @@ string_11: .byte  104, 101, 108, 108, 111, 0
 	addi $sp, $sp, 4
 .data
 .align 2
-string_12: .byte  9, 108, 105, 110, 101, 49, 54, 10, 0
+string_13: .byte  9, 108, 105, 110, 101, 32, 51, 53, 10, 0
 .text
-	la $t0, string_12 # loading address of 1st char of string `\tline16\n`
+	la $t0, string_13 # loading address of 1st char of string `\tline 35\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
 	jal prints
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
-	li $t0, 1 # base case int literal
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	li $t0, 1 # base case int literal
-	sub $t0, $zero, $t0
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal inteqeq
-	move $t0, $v0  #  int relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	li $t1, 1
-	xor $t0, $t0, $t1
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
 	li $t0, 1   # constant write true
 	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal inteqeq
-	move $t0, $v0    #  bool relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
+	sw $t0, 0($sp)
+	bne $t0, $zero, skipor_true_10
+	jal main
+	lw $t1, 0($sp)
+	or $t0, $t1, $t0
+skipor_true_10:
+	add $sp, $sp, 4
 	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -327,36 +345,24 @@ string_12: .byte  9, 108, 105, 110, 101, 49, 54, 10, 0
 	addi $sp, $sp, 4
 .data
 .align 2
-string_13: .byte  9, 108, 105, 110, 101, 49, 55, 10, 0
+string_14: .byte  9, 108, 105, 110, 101, 32, 51, 54, 10, 0
 .text
-	la $t0, string_13 # loading address of 1st char of string `\tline17\n`
+	la $t0, string_14 # loading address of 1st char of string `\tline 36\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
 	jal prints
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
-.data
-.align 2
-string_14: .byte  0
-.text
-	la $t0, string_14 # loading address of 1st char of string ``
-	sw $t0, -20($fp) # assignment for str string
-	lw $t0, -20($fp) # load content of str string
+	move $t0, $zero   # constant write false
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-.data
-.align 2
-string_15: .byte  0
-.text
-	la $t0, string_15 # loading address of 1st char of string ``
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal strlte
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
+	beq $t0, $zero, skipand_false_11
+	jal main
+	lw $t1, 0($sp)
+	and $t0, $t1, $t0
+skipand_false_11:
+	add $sp, $sp, 4
 	# Adding arg #1 in functioncall printb()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -365,41 +371,9 @@ string_15: .byte  0
 	addi $sp, $sp, 4
 .data
 .align 2
-string_16: .byte  9, 108, 105, 110, 101, 50, 48, 10, 0
+string_15: .byte  9, 108, 105, 110, 101, 32, 51, 54, 10, 0
 .text
-	la $t0, string_16 # loading address of 1st char of string `\tline20\n`
-	# Adding arg #1 in functioncall prints()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal prints
-	# Removing arg #2 in functioncall prints()
-	addi $sp, $sp, 4
-	lw $t0, -20($fp) # load content of str string
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-.data
-.align 2
-string_17: .byte  97, 0
-.text
-	la $t0, string_17 # loading address of 1st char of string `a`
-	addi $sp, $sp, -4
-	sw $t0, 0($sp) # append rhs result
-	jal strgt
-	move $t0, $v0   # string relop result
-	# pop 2 words rel op
-	addi $sp, $sp, 4
-	addi $sp, $sp, 4
-	# Adding arg #1 in functioncall printb()
-	addi $sp, $sp, -4
-	sw $t0, 0($sp)
-	jal printb
-	# Removing arg #2 in functioncall printb()
-	addi $sp, $sp, 4
-.data
-.align 2
-string_18: .byte  9, 108, 105, 110, 101, 50, 49, 10, 0
-.text
-	la $t0, string_18 # loading address of 1st char of string `\tline21\n`
+	la $t0, string_15 # loading address of 1st char of string `\tline 36\n`
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -407,12 +381,6 @@ string_18: .byte  9, 108, 105, 110, 101, 50, 49, 10, 0
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
 main_ret:
-	# Dealloc x_file_main
-	add $sp, $sp, 4
-	# Dealloc y_file_main
-	add $sp, $sp, 4
-	# Dealloc str_file_main
-	add $sp, $sp, 4
 	# Restore old fp and lr
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4

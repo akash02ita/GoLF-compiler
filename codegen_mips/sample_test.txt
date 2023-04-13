@@ -1,22 +1,42 @@
 func main() {
-    var x int
-    var y bool
-    x = 1 + 4 + 1 + 2 + 1
-    printi(x)
+    // var x int
+    // var y bool
+    // x = 1 + 4 + 1 + 2 + 1
+    // printi(x)
+    // prints("\n")
+    // printb(x == 5); prints("\tline 7\n");
+// 
+    // var str string
+    // printb(str == ""); prints("\tline 10\n")
+    // str = "hello"
+    // printb(str == "hello"); prints("\tline 12\n")
+// 
+    // printb((str == "hello") == true); prints("\tline14\n")
+    // printb((str == "hello") != true); prints("\tline15\n")
+    // printb((str <= "hello")); prints("\tline16\n")
+    // printb(!(1 == -1) == true); prints("\tline17\n")
+
+    //str = ""
+    //printb(str <= ""); prints("\tline20\n")
+    //printb(str > "a"); prints("\tline21\n")
+
+    printb(false && false); prints("\tcheck and\n")
+    printb(true && false); prints("\tcheck and\n")
+    printb(false && true); prints("\tcheck and\n")
+    printb(true && true); prints("\tcheck and\n")
     prints("\n")
-    printb(x == 5); prints("\tline 7\n");
+    printb(false || false); prints("\tcheck or\n")
+    printb(true || false); prints("\tcheck or\n")
+    printb(false || true); prints("\tcheck or\n")
+    printb(true || true); prints("\tcheck or\n")
+    prints("\n")
 
-    var str string
-    printb(str == ""); prints("\tline 10\n")
-    str = "hello"
-    printb(str == "hello"); prints("\tline 12\n")
+    printb((1+2) == 3 && true); prints("\tline 34\n");
+    printb("hello" == "hello" && true); prints("\tline 35\n");
 
-    printb((str == "hello") == true); prints("\tline14\n")
-    printb((str == "hello") != true); prints("\tline15\n")
-    printb((str <= "hello")); prints("\tline16\n")
-    printb(!(1 == -1) == true); prints("\tline17\n")
+    // THIS FINAL LINE BELOW checks if short circuit works
+    // if not, then infinite recursion
+    printb(true || main()); prints("\tline 36\n");
+    printb(false && main()); prints("\tline 36\n");
 
-    str = ""
-    printb(str <= ""); prints("\tline20\n")
-    printb(str > "a"); prints("\tline21\n")
 }
