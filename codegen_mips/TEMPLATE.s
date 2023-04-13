@@ -53,22 +53,31 @@ printb: # input $0 = 0 or 1 (an integer)
     sw $ra, 0($sp)
 
     li $t0, 0
-    beq $a0, $t0, printb_true
-    li $t0, 1
     beq $a0, $t0, printb_false
+    li $t0, 1
+    beq $a0, $t0, printb_true
 
 
     la $a0, $invalidbool
+    addi $sp, $sp, -4
+    sw $a0, 0($sp)
     jal prints
+    addi $sp, $sp, 4
     j printb_ret
 
 printb_true:
     la $a0, $true
+    addi $sp, $sp, -4
+    sw $a0, 0($sp)
     jal prints
+    addi $sp, $sp, 4
     j printb_ret
 printb_false:
     la $a0, $false
+    addi $sp, $sp, -4
+    sw $a0, 0($sp)
     jal prints
+    addi $sp, $sp, 4
 printb_ret:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
@@ -100,3 +109,180 @@ halt:
     li $v0, 10
     syscall
 
+# ------------------------ comparison subroutines
+rettrue:
+    li $v0, 1
+    jr $ra
+retfalse:
+    move $v0, $zero
+    jr $ra
+
+
+        # ----------------
+intlt:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    blt $t0, $t1, rettrue
+    j retfalse
+intgt:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    bgt $t0, $t1, rettrue
+    j retfalse
+intlte:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    ble $t0, $t1, rettrue
+    j retfalse
+intgte:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    bge $t0, $t1, rettrue
+    j retfalse
+inteqeq:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    beq $t0, $t1, rettrue
+    j retfalse
+intneq:
+    lw $t0, 4($sp)
+    lw $t1, 0($sp)
+    bne $t0, $t1, rettrue
+    j retfalse
+        # ----------------
+
+strcmp: # inputs: $a0, $a1
+    lb $t0, ($a0)      
+    lb $t1, ($a1)      
+
+strcmploop:
+    bne $t0, $t1, strcmpcheck
+    beqz $t0, strcmpcheck
+
+    addi $a0, $a0, 1   # next char address
+    addi $a1, $a1, 1   # next char address
+    lb $t0, ($a0)      # load char
+    lb $t1, ($a1)      # load char
+    j strcmploop
+
+strcmpcheck:
+    sub $v0, $t0, $t1  # difference will tell if string are equal, 1st string is less than (neg) or greater than (pos) than 2nd string
+    jr $ra             # return to the caller
+
+# -----------------------------------------
+
+
+strlt:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal intlt
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+strgt:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal intgt
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+strlte:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal intlte
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+strgte:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal intgte
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+streqeq:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal inteqeq
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+strneq:
+    lw $a0, 4($sp)
+    lw $a1, 0($sp)
+    # save stack frame
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    # code
+    jal strcmp
+    addi $sp, $sp, -4
+    sw $v0, 0($sp)
+    addi $sp, $sp, -4
+    sw $zero, 0($sp)
+    jal intneq
+    add $sp, $sp, 4
+    add $sp, $sp, 4
+    # restore stack frame
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra

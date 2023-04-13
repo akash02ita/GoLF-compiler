@@ -429,14 +429,18 @@ char * addString(char * buff) {
 }
 
 int branchcounter = 0;
-void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
-    if (node == NULL) return;
+#define INT_TYPE 10
+#define STR_TYPE 20
+#define BOOL_TYPE 30
+int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
+    if (node == NULL) return -1;
 
     // basecase1: literal
     if (node->node_type == Expr && node->kind.exp == BasicLit) {
         if (node->type_name == INT) {
             int immediate = node->val.ival;
-            fprintf(out, "\tli $t0, %d\n", immediate);
+            fprintf(out, "\tli $t0, %d # base case int literal\n", immediate);
+            return INT_TYPE;
         }
         else if (node->type_name == STR) { 
             char * buff = strdup(node->val.sval);
@@ -449,6 +453,7 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
             fprintf(out, "\tla $t0, %s # loading address of 1st char of string `%s`\n", label, stringonly);
             free(buff); // not needed anymore
             free(label); // free as not needed anymore
+            return STR_TYPE;
         } else { assert (0); }
     }
 
@@ -457,23 +462,41 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
         // check if global var or local
         char * varname = node->val.sval;
         ScopeValue * value = (ScopeValue *) node->sym;
-        char * vartype = value->type;
+        assert (value != NULL);
+        if (value->isid) {
+            char * vartype = value->type;
+            assert (vartype != NULL);
 
-        int size = 1; char * unique_name = (char *) malloc(size); unique_name[0] = '\0';
-        size = mystrcat(&unique_name, varname, size);
-        size = mystrcat(&unique_name, value->provenience, size);
+            int size = 1; char * unique_name = (char *) malloc(size); unique_name[0] = '\0';
+            size = mystrcat(&unique_name, varname, size);
+            size = mystrcat(&unique_name, value->provenience, size);
 
-        int * offset = hashMapFind(table, unique_name);
-        // case global: get address of label
-        if (offset == NULL) {
-            fprintf(out, "\tla $t0, %s # load content of glob var %s %s\n", unique_name, varname, vartype);
-            writei("lw $t0, 0($t0) # load address of 1st char");
+            int * offset = hashMapFind(table, unique_name);
+            // case global: get address of label
+            if (offset == NULL) {
+                fprintf(out, "\tla $t0, %s # load content of glob var %s %s\n", unique_name, varname, vartype);
+                writei("lw $t0, 0($t0) # load address of 1st char");
+            }
+            // case local: use table hashmap to get offset
+            else {
+                fprintf(out, "\tlw $t0, %d($fp) # load content of %s %s\n", *offset, varname, vartype);
+            }
+            if (strcmp(vartype, "int") == 0) return INT_TYPE;
+            else if (strcmp(vartype, "string") == 0) return STR_TYPE;
+            else if (strcmp(vartype, "bool") == 0) return BOOL_TYPE;
+            else assert (0);
         }
-        // case local: use table hashmap to get offset
-        else {
-            fprintf(out, "\tlw $t0, %d($fp) # load content of %s %s\n", *offset, varname, vartype);
-        }
+        else if (value->isconst) {
+            // true or false
+            if (strcmp(varname, "true") == 0) {
+                writei("li $t0, 1   # constant write true");
+            }
+            else if (strcmp(varname, "false") == 0) {
+                writei("move $t0, $zero   # constant write false");
 
+            } else assert (0);
+            return BOOL_TYPE;
+        } else assert (0);
     }
 
     // case binary op
@@ -488,6 +511,11 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
                 // in TEMPLATE.s hardcode a subroutine to compare strings
                 // the subroutine will return true or false
                 // note: strings are compared lexicographically
+        ASTNode * left = node->children[0];
+        ASTNode * right = node->children[1];
+
+        int typeleft = evalExpression(left, truebranchlabel, falsebranchlabel);
+        writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp)"); // append word on stack
         switch (node->val.op)
         {
             case ADD:
@@ -495,6 +523,11 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
             case MULT:
             case DIV:
             case MOD: {
+                int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append lhs result"); // append word on stack
+                assert (typeleft == typeright && typeleft == INT_TYPE);
+                applyIntOp(node->val.op);
+                return INT_TYPE;
                 break;
             }
             case LT:
@@ -503,26 +536,43 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
             case GTE:
             case EQEQ:
             case NEQ: {
-                break;
-            }
-            case EMARK: {
+                int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append rhs result"); // append word on stack
+                assert (typeleft == typeright);
+                applyRelOp(node->val.op, typeleft);
+                return BOOL_TYPE;
                 break;
             }
             case AND:
             case OR: {
+                // TODO:
+                return BOOL_TYPE;
                 break;
             }
+            default: { assert(0); break; }
         }
     }
 
     // case unary op
     if (node->node_type == Expr && node->kind.exp == UnaryExp) {
-        // here it is flip sign
-
-        // evaluate nested expression and then negate it
+        // evaluate nested expression and then flip it
         evalExpression(node->children[0], truebranchlabel, falsebranchlabel);
-        // flip sign by doing -$t0 = 0 - $t0
-        writei("sub $t0, $zero, $t0");
+
+        // here it is flip int sign if UNARY SIGN is '-'
+        if (node->val.op == SUB) {
+
+            // flip sign by doing -$t0 = 0 - $t0
+            writei("sub $t0, $zero, $t0");
+            return INT_TYPE;
+        }
+        // here it is to flip bool sign if UNARY sign IS '!'
+        else if (node->val.op == EMARK) {
+            // xor can be usefule to toogle 0 to 1 or vice versa
+            writei("li $t1, 1"); // $t0 xor 1 will toogle bit
+            writei("xor $t0, $t0, $t1");
+            return BOOL_TYPE;
+        } else assert(0);
+        return -1;
     }
 
     // case function call
@@ -532,5 +582,87 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
 
 
     // by this point all cases should be covered
-    
+    return -1;
+}
+
+
+void applyIntOp(Oper op) {
+    // pop the 2 words
+    writei("# pop 2 words apply op");
+    writei("lw $t0, 0($sp)");
+    writei("addi $sp, $sp, 4");
+    writei("lw $t1, 0($sp)");
+    writei("addi $sp, $sp, 4");
+    switch (op)
+    {
+    case ADD: {
+        writei("add $t0, $t0, $t1");
+        break;
+    }
+    case SUB: {
+        writei("sub $t0, $t0, $t1");
+        break;
+    }
+    case MULT: {
+        writei("mult $t0, $t1");
+        writei("mflo $t0"); // mflo has lower 32 bits value of multiplication
+        break;
+    }
+    case DIV: {
+        writei("div $t0, $t1");
+        writei("mflo $t0"); // mflo has quotient
+        break;
+    }
+    case MOD: {
+        writei("div $t0, $t1");
+        writei("mfhi $t0"); // mflow has remainder
+        break;
+    }
+    default: {assert (0); break; }
+    }
+}
+
+void applyRelOp(Oper op, int type) {
+    if (type == INT_TYPE) {
+        switch (op)
+        {   // TEMPLATE.S subourtines
+            case LT: { writei("jal intlt"); break;}
+            case GT:  { writei("jal intgt"); break;}
+            case LTE: { writei("jal intlte"); break;}
+            case GTE: { writei("jal intgte"); break;}
+            case EQEQ: { writei("jal inteqeq"); break;}
+            case NEQ: { writei("jal intneq"); break;}
+            default: assert (0); break;
+        }
+        writei("move $t0, $v0  #  int relop result");
+    }
+    else if (type == BOOL_TYPE) {
+        switch (op)
+        {   // TEMPLATE.S subourtines
+            case EQEQ: { writei("jal inteqeq"); break;}
+            case NEQ: { writei("jal intneq"); break;}
+            default: assert (0); break;
+        }
+        writei("move $t0, $v0    #  bool relop result");
+    }
+    else if (type == STR_TYPE) {
+        switch (op)
+        {   // TEMPLATE.S subourtines
+            case LT: { writei("jal strlt"); break;}
+            case GT:  { writei("jal strgt"); break;}
+            case LTE: { writei("jal strlte"); break;}
+            case GTE: { writei("jal strgte"); break;}
+            case EQEQ: { writei("jal streqeq"); break;}
+            case NEQ: { writei("jal strneq"); break;}
+            default: {
+                assert(0);
+                break;
+            }
+        }
+        writei("move $t0, $v0   # string relop result");
+    } else assert (0);
+    // remove 2 words of stack (args passed)
+    writei("# pop 2 words rel op");
+    writei("addi $sp, $sp, 4");
+    writei("addi $sp, $sp, 4");
 }

@@ -1,15 +1,22 @@
 func main() {
-    var itworks int
-
-    itworks = 1234
-
-    printi(itworks); prints("\n\n")
-    itworks = -itworks
-
-    printi(--42)
+    var x int
+    var y bool
+    x = 1 + 4 + 1 + 2 + 1
+    printi(x)
     prints("\n")
-    printi(-42)
-    prints("\n\n")
+    printb(x == 5); prints("\tline 7\n");
 
-    printi(itworks); prints("\n\n")
+    var str string
+    printb(str == ""); prints("\tline 10\n")
+    str = "hello"
+    printb(str == "hello"); prints("\tline 12\n")
+
+    printb((str == "hello") == true); prints("\tline14\n")
+    printb((str == "hello") != true); prints("\tline15\n")
+    printb((str <= "hello")); prints("\tline16\n")
+    printb(!(1 == -1) == true); prints("\tline17\n")
+
+    str = ""
+    printb(str <= ""); prints("\tline20\n")
+    printb(str > "a"); prints("\tline21\n")
 }

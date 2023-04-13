@@ -17,7 +17,7 @@ main.o: main.c parse.tab.h astC.h
 hashmap.o: hashmap.c hashmap.h
 stack.o: stack.c stack.h
 semantic.o: semantic.c semantic.h hashmap.h stack.h
-gen.o: gen.c gen.h hashmap.h stack.h
+gen.o: gen.c gen.h hashmap.h stack.h TEMPLATE.s
 
 astC.o: astC.c astC.h
 
