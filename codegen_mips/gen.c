@@ -316,6 +316,8 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
         case IfElseStmt: {
             char * bodylabel = generateLabel("ifbody", ifcounter);
             char * elselabel = generateLabel("ifelse", ifcounter);
+            char * skipelse = generateLabel("skipelse", ifcounter);
+
             ifcounter++;
 
             // write code for condition checking
@@ -323,9 +325,12 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             // write code for body of if
             fprintf(out, "%s:\n", bodylabel);
             applyBlock(blocknode->children[1], NULL, retlabel, breaklabel);
+            // BUGFIX: if else forgot to jump outside else
+            fprintf(out, "\tj %s # skip else part\n", skipelse);
             // write code for else of if
             fprintf(out, "%s:\n", elselabel);
             applyBlock(blocknode->children[2], NULL, retlabel, breaklabel);
+            fprintf(out, "%s:\n", skipelse);
             break;
         }
         case For: {
@@ -476,6 +481,13 @@ int branchcounter = 0;
 int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
     /*
         NOTE: whereeveer it returns boolean, the true and false branching must be done if it has to be
+
+        For now recursive calls, have true and branch labels set to null as they are not needed to keep logic correct
+            this is a safety measure to prevent any possible weird bugs
+        
+        When unaryop is ! the recursive call must be with true and false branch labels swapped!
+            or pass NULL, NULL to be safe
+            this is becuase ! flips bool sign which implies opposite order
     */
     if (node == NULL) return -1;
 
@@ -576,7 +588,8 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
         ASTNode * left = node->children[0];
         ASTNode * right = node->children[1];
 
-        int typeleft = evalExpression(left, truebranchlabel, falsebranchlabel);
+        // int typeleft = evalExpression(left, truebranchlabel, falsebranchlabel);
+        int typeleft = evalExpression(left, NULL, NULL);
         writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append lhs result"); // append word on stack
         switch (node->val.op)
         {
@@ -585,7 +598,8 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             case MULT:
             case DIV:
             case MOD: {
-                int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                // int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                int typeright = evalExpression(right, NULL, NULL);
                 writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append rhs result"); // append word on stack
                 // printf("%d %d\n", typeleft, typeright);
                 assert (typeleft == typeright && typeleft == INT_TYPE);
@@ -599,7 +613,8 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             case GTE:
             case EQEQ:
             case NEQ: {
-                int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                // int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
+                int typeright = evalExpression(right, NULL, NULL);
                 writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append rhs result"); // append word on stack
                 assert (typeleft == typeright);
                 applyRelOp(node->val.op, typeleft);
@@ -619,7 +634,8 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 char * skiplabel = generateLabel("skipand_false", branchcounter);
                 branchcounter++;
                 fprintf(out, "\tbeq $t0, $zero, %s\n", skiplabel); // if false then jump
-                evalExpression(right, truebranchlabel, falsebranchlabel);
+                // evalExpression(right, truebranchlabel, falsebranchlabel);
+                evalExpression(right, NULL, NULL);
                 writei("lw $t1, 0($sp)");
                 writei("and $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
                 fprintf(out, "%s:\n", skiplabel);
@@ -641,7 +657,8 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 char * skiplabel = generateLabel("skipor_true", branchcounter);
                 branchcounter++;
                 fprintf(out, "\tbne $t0, $zero, %s\n", skiplabel); // if true then jump
-                evalExpression(right, truebranchlabel, falsebranchlabel);
+                // evalExpression(right, truebranchlabel, falsebranchlabel);
+                evalExpression(right, NULL, NULL);
                 writei("lw $t1, 0($sp)");
                 writei("or $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
                 fprintf(out, "%s:\n", skiplabel);
@@ -665,7 +682,11 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
     // case unary op
     if (node->node_type == Expr && node->kind.exp == UnaryExp) {
         // evaluate nested expression and then flip it
-        evalExpression(node->children[0], truebranchlabel, falsebranchlabel);
+        // when unary op is !, then it flips boolean,
+            // thus true and false branchlabels should be swapped!
+        // evalExpression(node->children[0], truebranchlabel, falsebranchlabel);
+        // or it can also work without allowing branching, so that it is handled only at this point
+        evalExpression(node->children[0], NULL, NULL);
 
         // here it is flip int sign if UNARY SIGN is '-'
         if (node->val.op == SUB) {
@@ -684,11 +705,11 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             writei("xor $t0, $t0, $t1");
             if (truebranchlabel != NULL) {
                 // true means != 0
-                fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                fprintf(out, "\tbne $t0, $zero, %s  # unary TRUE\n", truebranchlabel);
             }
             if (falsebranchlabel != NULL) {
                 // false mean == 0
-                fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                fprintf(out, "\tbeq $t0, $zero, %s  # unary FALSE\n", falsebranchlabel);
             }
             return BOOL_TYPE;
         } else assert(0);
