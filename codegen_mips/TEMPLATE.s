@@ -25,6 +25,7 @@ getchar:
 getchar_ret:
     lw $ra 0($sp)
     addi $sp $sp, 4
+    # buf fixed in applyfunccall: move $t0, $v0                   # bugfix: currently my code uses $t0 as return in expressioneval
     jr $ra
 
 
@@ -36,7 +37,7 @@ prints: # input: $a0 = address of first char of string
 
 printc: # input: $a0 = address of char to print
     lw $a0, 0($sp) # in my case, i am passing all args in stack
-    li $v0 1
+    li $v0 11
     syscall
     jr $ra
 

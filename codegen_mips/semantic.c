@@ -52,10 +52,17 @@ void addUniverseBlock() {
     ScopeValue * funcvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
     funcvalue->provenience = "";
     funcvalue->istype = false; funcvalue->isconst = false; funcvalue->isfunc = true; funcvalue->isid = false;
+    funcvalue->rettype = "void"; funcvalue->type = funcvalue->rettype;
     hashMapInsert(universeScope, "prints", funcvalue);
     hashMapInsert(universeScope, "printi", funcvalue);
     hashMapInsert(universeScope, "printb", funcvalue);
     hashMapInsert(universeScope, "printc", funcvalue);
+
+    ScopeValue * getchar = (ScopeValue *) malloc(sizeof(ScopeValue));
+    getchar->provenience = "";
+    getchar->istype = false; getchar->isconst = false; getchar->isfunc = true; getchar->isid = false;
+    getchar->rettype = "int"; getchar->type = getchar->rettype;
+    hashMapInsert(universeScope, "getchar", getchar);
     
     
     ScopeValue * constvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
@@ -226,7 +233,9 @@ void define(ASTNode * node) {
             exit(EXIT_FAILURE);
         }
         // also put the same for type, as it will not affect logic (but if using value.type instea might be easier in some parts)
+        value->rettype = rettype; // bufix: forgot this
         value->type = value->rettype;
+        assert (value->rettype != NULL);
         hashMapInsert(currscope, functionname, value);
         node->sym = (void *) value;
     }
@@ -301,6 +310,7 @@ void pass1(ASTNode * asttree) {
 }
 
 int nested_block = 0;
+int unique_block_counter = 0; // to prevent variables redefine at a new block in same functions to have same name
 void pass2(ASTNode * asttree) {
     ASTNode * node = asttree;
     assert (node != NULL);
@@ -320,7 +330,13 @@ void pass2(ASTNode * asttree) {
     else if (node->node_type == Stmt && node->kind.decl == Block) {
         if (nested_block > 0) { // function starts with a body as the 1st block. but must prevent that to openscope in that case
             // printf("Opening scope for Block statement %d\n", nested_block);
-            openscope("block");
+            char * res = (char *) malloc(1000); res[0] = '\0'; // assume it is enough long
+            sprintf(res, "%s_%d", "block", unique_block_counter);
+            assert( strlen(res) < 1000 ); // verify did not overflow memory
+            // openscope("block"); // func main { {var s1 int}  {var s1 int} } is a problem, s1 is on different scope but it's provenience SHOULD NOT be same
+            openscope(res);
+            free(res);
+            unique_block_counter++;
         }
         nested_block++;
     }

@@ -256,7 +256,7 @@ void handleWarningUnknown2(const char * text, int mylen) {
     fprintf(stderr, "warning: skipping unknown character `%s` at or near line %d\n", filterText(text, mylen), yylineno);
   } else {
     fprintf(stderr, "error: too many warnings at or near line %d\n", yylineno);
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE); // try to recover error
   }
 }
 void handleWarningUnknown(const char * text) { handleWarningUnknown2(text, strlen(text)); }

@@ -170,6 +170,8 @@ void addLV(ASTNode * node) {
         size = mystrcat(&unique_name, varname, size);
         size = mystrcat(&unique_name, value->provenience, size);
         int * offset = (int *) hashMapFind(table, unique_name); // not needed
+        assert (offset != NULL);
+        // printf("lvcounter %d? offset %d?  for %s %s\n", lvcounter, *offset, varname, unique_name);
         assert (*offset == lvcounter);
         lvcounter -= 4;
 
@@ -248,7 +250,31 @@ char * generateLabel(char * prefix, int counter) {
 }
 void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * breaklabel) {
     if (blocknode == NULL) return;
-    if (blocknode->node_type == Stmt) {
+    if (blocknode->node_type == Decl && blocknode->kind.decl == VarDecl) {
+        // local vardeclarations are NOT skipped: needs to be reset to default value
+        char * varname = blocknode->children[0]->val.sval;
+        ScopeValue * value = (ScopeValue *) blocknode->sym;
+        int size = 1; char * unique_name = (char *) malloc(size); unique_name[0] = '\0';
+        size = mystrcat(&unique_name, varname, size);
+        size = mystrcat(&unique_name, value->provenience, size);
+        int * offset = (int *) hashMapFind(table, unique_name); // NEEDED
+        assert (offset != NULL);
+
+        char * type_var = blocknode->children[1]->val.sval;
+        // printf("Variable %s is of type %s\n", unique_name, type_var); getchar();
+        fprintf(out, "\t# Reset value %s\n", unique_name);
+        if (strcmp(type_var, "int") == 0) {
+            fprintf(out, "\tsw $zero, %d($fp)\n", *offset);
+        }
+        else if (strcmp(type_var, "bool") == 0) {
+            fprintf(out, "\tsw $zero, %d($fp)\n", *offset);
+        }
+        else if (strcmp(type_var, "string") == 0) {
+            fprintf(out, "\tla $t0, $string_empty\n");
+            fprintf(out, "\tsw $t0, %d($fp)\n", *offset); // variable will store address of label always!
+        }
+    }
+    else if (blocknode->node_type == Stmt) {
         switch (blocknode->kind.stmt)
         {
         case BreakStmt: {
@@ -355,7 +381,6 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
         }
         default:
             // empty statements are skipped: no purpose in code
-            // declarations are skipped: allocation already done
             break;
         }
     }
@@ -386,6 +411,8 @@ void applyFunctionCall(ASTNode * funccallnode) {
     buffsize = mystrcat(&label, value->provenience, buffsize);
     // printf("label name is %s\n", label); getchar();
     fprintf(out, "\tjal %s\n", label);
+    // NOTE: do not forget to copy paste $t0
+    writei("move $t0, $v0");
 
     // do not forget to also deallocate functoin stack memory!
     actual = funccallnode->children[1]->children[0];
@@ -546,6 +573,7 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             case MOD: {
                 int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
                 writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append lhs result"); // append word on stack
+                // printf("%d %d\n", typeleft, typeright);
                 assert (typeleft == typeright && typeleft == INT_TYPE);
                 applyIntOp(node->val.op);
                 return INT_TYPE;
@@ -647,16 +675,28 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             }
             return BOOL_TYPE;
         } else assert(0);
-        return -1;
+        assert (0); 
     }
 
     // case function call
     if (node->node_type == Expr && node->kind.exp == FuncCall) {
         applyFunctionCall(node);
+        ScopeValue * value = (ScopeValue *) node->sym;
+        assert (value->isfunc);
+        char * type = value->rettype;
+        assert (type != NULL);
+        // printf("what is ret type then? %s\n", type);
+        if (strcmp(type, "int") == 0) return INT_TYPE;
+        else if (strcmp(type, "bool") == 0) return BOOL_TYPE;
+        else if (strcmp(type, "string") == 0) return STR_TYPE;
+        else assert(0);
     }
 
 
     // by this point all cases should be covered
+    assert (0);
+    printTree(node, stderr, 4);
+    getchar();
     return -1;
 }
 
