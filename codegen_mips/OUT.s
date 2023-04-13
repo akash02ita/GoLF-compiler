@@ -1,4 +1,13 @@
 # mips code
+.data
+.align 2
+x_file:	.word $string_empty
+.data
+.align 2
+glob_file:	.word $string_empty
+.data
+.align 2
+integer_file:	.word 0
 .text
 main:
 	# Save old fp and lr
@@ -7,11 +16,178 @@ main:
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	addi $fp, $sp, 8
+	# Alloc integer2_file_main
+	addi $sp, $sp, -4  # add memory for lv
+	sw $zero, 0($sp)
+	# Alloc x_file_main_block
+	addi $sp, $sp, -4  # add memory for lv
+	la $t0, $string_empty
+	sw $t0, 0($sp)
+	# Alloc y_file_main_block
+	addi $sp, $sp, -4  # add memory for lv
+	la $t0, $string_empty
+	sw $t0, 0($sp)
+	# Alloc x_file_main_block_block
+	addi $sp, $sp, -4  # add memory for lv
+	la $t0, $string_empty
+	sw $t0, 0($sp)
+	li $t0, 5
+	sw $t0, -12($fp) # assignment for integer2 int
 .data
 .align 2
 string_0: .byte  72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33, 10, 0
 .text
 	la $t0, string_0 # loading address of 1st char of string `Hello, world!\n`
+	la $t1, x_file
+	sw $t0, 0($t1) # assignment glob var x
+	la $t0, integer_file # load content of glob var integer int
+	lw $t0, 0($t0) # load address of 1st char
+	# Adding arg #1 in functioncall printi()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printi
+	# Removing arg #2 in functioncall printi()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_1: .byte  10, 0
+.text
+	la $t0, string_1 # loading address of 1st char of string `\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	lw $t0, -12($fp) # load content of integer2 int
+	# Adding arg #1 in functioncall printi()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printi
+	# Removing arg #2 in functioncall printi()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_2: .byte  10, 0
+.text
+	la $t0, string_2 # loading address of 1st char of string `\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_3: .byte  104, 111, 108, 97, 32, 118, 97, 109, 111, 115, 10, 0
+.text
+	la $t0, string_3 # loading address of 1st char of string `hola vamos\n`
+	la $t1, glob_file
+	sw $t0, 0($t1) # assignment glob var glob
+.data
+.align 2
+string_4: .byte  10, 9, 100, 111, 32, 110, 111, 116, 32, 112, 114, 105, 110, 116, 32, 111, 117, 116, 115, 105, 100, 101, 32, 115, 99, 111, 112, 101, 32, 116, 104, 105, 115, 10, 0
+.text
+	la $t0, string_4 # loading address of 1st char of string `\n\tdo not print outside scope this\n`
+	sw $t0, -16($fp) # assignment for x string
+.data
+.align 2
+string_5: .byte  104, 101, 108, 108, 111, 32, 116, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116, 10, 0
+.text
+	la $t0, string_5 # loading address of 1st char of string `hello this is a test\n`
+	sw $t0, -20($fp) # assignment for y string
+	lw $t0, -16($fp) # load content of x string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	li $t0, 234324
+	la $t1, integer_file
+	sw $t0, 0($t1) # assignment glob var integer
+.data
+.align 2
+string_6: .byte  119, 104, 97, 116, 101, 118, 101, 114, 0
+.text
+	la $t0, string_6 # loading address of 1st char of string `whatever`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_7: .byte  97, 110, 111, 116, 104, 101, 114, 32, 115, 99, 111, 112, 101, 45, 45, 45, 45, 10, 0
+.text
+	la $t0, string_7 # loading address of 1st char of string `another scope----\n`
+	sw $t0, -24($fp) # assignment for x string
+	lw $t0, -24($fp) # load content of x string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	lw $t0, -20($fp) # load content of y string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	lw $t0, -20($fp) # load content of y string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	lw $t0, -16($fp) # load content of x string
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	la $t0, glob_file # load content of glob var glob string
+	lw $t0, 0($t0) # load address of 1st char
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	la $t0, integer_file # load content of glob var integer int
+	lw $t0, 0($t0) # load address of 1st char
+	# Adding arg #1 in functioncall printi()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal printi
+	# Removing arg #2 in functioncall printi()
+	addi $sp, $sp, 4
+.data
+.align 2
+string_8: .byte  45, 45, 45, 45, 10, 0
+.text
+	la $t0, string_8 # loading address of 1st char of string `----\n`
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	la $t0, x_file # load content of glob var x string
+	lw $t0, 0($t0) # load address of 1st char
+	# Adding arg #1 in functioncall prints()
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+	jal prints
+	# Removing arg #2 in functioncall prints()
+	addi $sp, $sp, 4
+	la $t0, glob_file # load content of glob var glob string
+	lw $t0, 0($t0) # load address of 1st char
 	# Adding arg #1 in functioncall prints()
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
@@ -19,6 +195,14 @@ string_0: .byte  72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33, 10
 	# Removing arg #2 in functioncall prints()
 	addi $sp, $sp, 4
 main_ret:
+	# Dealloc integer2_file_main
+	add $sp, $sp, 4
+	# Dealloc x_file_main_block
+	add $sp, $sp, 4
+	# Dealloc y_file_main_block
+	add $sp, $sp, 4
+	# Dealloc x_file_main_block_block
+	add $sp, $sp, 4
 	# Restore old fp and lr
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4

@@ -240,7 +240,6 @@ void writei(char * ins) {
 
 int ifcounter = 0;
 int forcounter = 0;
-int branchcounter = 0;
 char * generateLabel(char * prefix, int counter) {
     char * res = (char *) malloc(1000); res[0] = '\0'; // assume it is enough long
     sprintf(res, "%s_%d", prefix, counter);
@@ -334,7 +333,7 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             if (offset == NULL) // implies GLOBAL_VAR
             {
                 fprintf(out, "\tla $t1, %s\n", unique_name);
-                fprintf(out, "\tsw $t0, 0($t1)\n # assignment glob var %s\n", varname);
+                fprintf(out, "\tsw $t0, 0($t1) # assignment glob var %s\n", varname);
             }
             else { // local variable
                 fprintf(out, "\tsw $t0, %d($fp) # assignment for %s %s\n", *offset, varname, vartype);
@@ -428,6 +427,8 @@ char * addString(char * buff) {
 
     return label; // returns generated strying label name
 }
+
+int branchcounter = 0;
 void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlabel) {
     if (node == NULL) return;
 
@@ -454,10 +455,25 @@ void evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchla
     // base case2: identifier
     if (node->node_type == Expr && node->kind.exp == Id) {
         // check if global var or local
+        char * varname = node->val.sval;
+        ScopeValue * value = (ScopeValue *) node->sym;
+        char * vartype = value->type;
 
+        int size = 1; char * unique_name = (char *) malloc(size); unique_name[0] = '\0';
+        size = mystrcat(&unique_name, varname, size);
+        size = mystrcat(&unique_name, value->provenience, size);
+
+        int * offset = hashMapFind(table, unique_name);
         // case global: get address of label
-
+        if (offset == NULL) {
+            fprintf(out, "\tla $t0, %s # load content of glob var %s %s\n", unique_name, varname, vartype);
+            writei("lw $t0, 0($t0) # load address of 1st char");
+        }
         // case local: use table hashmap to get offset
+        else {
+            fprintf(out, "\tlw $t0, %d($fp) # load content of %s %s\n", *offset, varname, vartype);
+        }
+
     }
 
     // case binary op
