@@ -12,6 +12,7 @@ LFLAGS=
 golf: $(OBJ)
 	$(CC) $(CFLAGS) -o golf $^
 	cp golf final
+	cp TEMPLATE.s final
 
 main.o: main.c parse.tab.h astC.h
 hashmap.o: hashmap.c hashmap.h
@@ -33,4 +34,5 @@ clean:
 	-rm *.tab.c
 	-rm *.o
 	-rm golf
-	-rm final/golf
+	-rm final/golf final/TEMPLATE.s
+	-rm final/OUT.s final/out.s

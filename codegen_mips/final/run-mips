@@ -29,7 +29,8 @@ import signal
 import socket
 import subprocess
 
-TESTPATH = '/home/profs/aycock/411/TEST/final'
+# TESTPATH = '/home/profs/aycock/411/TEST/final'
+TESTPATH = '.'
 INPUTPATH = f'{TESTPATH}/input'
 LOGFILE = 'run.output'
 JARCLASS = 'golf'
@@ -41,7 +42,8 @@ TIMEOUT = 7		# was 5s, increased 24 March 2023
 ASMBACKEND = True
 if ASMBACKEND:
 	OUTFILE = 'out.s'
-	RUNCMD = [ '/home/profs/aycock/411/bin/spim', '-file', OUTFILE ]
+	# RUNCMD = [ '/home/profs/aycock/411/bin/spim', '-file', OUTFILE ]
+	RUNCMD = [ 'spim', '-file', OUTFILE ]
 else:
 	OUTFILE = 'out.c'
 	EXEFILE = './a.out'
