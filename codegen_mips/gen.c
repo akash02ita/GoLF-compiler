@@ -563,7 +563,7 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
         ASTNode * right = node->children[1];
 
         int typeleft = evalExpression(left, truebranchlabel, falsebranchlabel);
-        writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp)"); // append word on stack
+        writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append lhs result"); // append word on stack
         switch (node->val.op)
         {
             case ADD:
@@ -572,7 +572,7 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             case DIV:
             case MOD: {
                 int typeright = evalExpression(right, truebranchlabel, falsebranchlabel);
-                writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append lhs result"); // append word on stack
+                writei("addi $sp, $sp, -4"); writei("sw $t0, 0($sp) # append rhs result"); // append word on stack
                 // printf("%d %d\n", typeleft, typeright);
                 assert (typeleft == typeright && typeleft == INT_TYPE);
                 applyIntOp(node->val.op);
@@ -609,7 +609,7 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 writei("lw $t1, 0($sp)");
                 writei("and $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
                 fprintf(out, "%s:\n", skiplabel);
-                writei("add $sp, $sp, 4"); // remove left result on top of stack
+                writei("add $sp, $sp, 4  # remove lhs"); // remove left result on top of stack
                 free(skiplabel);
                 if (truebranchlabel != NULL) {
                     // true means != 0
@@ -631,7 +631,7 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 writei("lw $t1, 0($sp)");
                 writei("or $t0, $t1, $t0"); // $t0 is result of right, $t1 is saved result of left
                 fprintf(out, "%s:\n", skiplabel);
-                writei("add $sp, $sp, 4"); // remove left result on top of stack
+                writei("add $sp, $sp, 4 # remove lhs"); // remove left result on top of stack
                 free(skiplabel);
                 if (truebranchlabel != NULL) {
                     // true means != 0
@@ -704,9 +704,9 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
 void applyIntOp(Oper op) {
     // pop the 2 words
     writei("# pop 2 words apply op");
-    writei("lw $t0, 0($sp)");
+    writei("lw $t1, 0($sp)"); // bufix: 2nd operand is t1: so very top of stack!
     writei("addi $sp, $sp, 4");
-    writei("lw $t1, 0($sp)");
+    writei("lw $t0, 0($sp)"); // bugfix: 1st operand is below!
     writei("addi $sp, $sp, 4");
     switch (op)
     {

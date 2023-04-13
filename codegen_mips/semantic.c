@@ -57,12 +57,14 @@ void addUniverseBlock() {
     hashMapInsert(universeScope, "printi", funcvalue);
     hashMapInsert(universeScope, "printb", funcvalue);
     hashMapInsert(universeScope, "printc", funcvalue);
+    hashMapInsert(universeScope, "halt", funcvalue);
 
     ScopeValue * getchar = (ScopeValue *) malloc(sizeof(ScopeValue));
     getchar->provenience = "";
     getchar->istype = false; getchar->isconst = false; getchar->isfunc = true; getchar->isid = false;
     getchar->rettype = "int"; getchar->type = getchar->rettype;
     hashMapInsert(universeScope, "getchar", getchar);
+    hashMapInsert(universeScope, "len", getchar);
     
     
     ScopeValue * constvalue = (ScopeValue *) malloc(sizeof(ScopeValue));
