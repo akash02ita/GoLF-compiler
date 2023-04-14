@@ -542,11 +542,29 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             else if (strcmp(vartype, "bool") == 0) {
                 if (truebranchlabel != NULL) {
                     // true means != 0
-                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // problem: what if jump is too large?
+                    // solution: use j unconditiional jumping to allow large jumps
+                    char * bigjump = generateLabel("bigjump_true", branchcounter);
+                    char * skipjump = generateLabel("skipjump_true", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbne $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, truebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 if (falsebranchlabel != NULL) {
                     // false mean == 0
-                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    // fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    char * bigjump = generateLabel("bigjump_false", branchcounter);
+                    char * skipjump = generateLabel("skipjump_false", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, falsebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 return BOOL_TYPE;
             }
@@ -563,11 +581,29 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
             } else assert (0);
             if (truebranchlabel != NULL) {
                 // true means != 0
-                fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                // fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                // problem: what if jump is too large?
+                // solution: use j unconditiional jumping to allow large jumps
+                char * bigjump = generateLabel("bigjump_true", branchcounter);
+                char * skipjump = generateLabel("skipjump_true", branchcounter);
+                branchcounter++;
+                fprintf(out, "\tbne $t0, $zero, %s\n", bigjump);
+                fprintf(out, "\tj %s\n", skipjump);
+                fprintf(out, "%s:  j %s\n", bigjump, truebranchlabel);
+                fprintf(out, "%s:\n", skipjump);
+                free(bigjump); free(skipjump);
             }
             if (falsebranchlabel != NULL) {
                 // false mean == 0
-                fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                // fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                char * bigjump = generateLabel("bigjump_false", branchcounter);
+                char * skipjump = generateLabel("skipjump_false", branchcounter);
+                branchcounter++;
+                fprintf(out, "\tbeq $t0, $zero, %s\n", bigjump);
+                fprintf(out, "\tj %s\n", skipjump);
+                fprintf(out, "%s:  j %s\n", bigjump, falsebranchlabel);
+                fprintf(out, "%s:\n", skipjump);
+                free(bigjump); free(skipjump);
             }
             return BOOL_TYPE;
         } else assert (0);
@@ -620,11 +656,29 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 applyRelOp(node->val.op, typeleft);
                 if (truebranchlabel != NULL) {
                     // true means != 0
-                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // problem: what if jump is too large?
+                    // solution: use j unconditiional jumping to allow large jumps
+                    char * bigjump = generateLabel("bigjump_true", branchcounter);
+                    char * skipjump = generateLabel("skipjump_true", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbne $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, truebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 if (falsebranchlabel != NULL) {
                     // false mean == 0
-                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    // fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    char * bigjump = generateLabel("bigjump_false", branchcounter);
+                    char * skipjump = generateLabel("skipjump_false", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, falsebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 return BOOL_TYPE;
                 break;
@@ -643,11 +697,29 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 free(skiplabel);
                 if (truebranchlabel != NULL) {
                     // true means != 0
-                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // problem: what if jump is too large?
+                    // solution: use j unconditiional jumping to allow large jumps
+                    char * bigjump = generateLabel("bigjump_true", branchcounter);
+                    char * skipjump = generateLabel("skipjump_true", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbne $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, truebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 if (falsebranchlabel != NULL) {
                     // false mean == 0
-                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    // fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    char * bigjump = generateLabel("bigjump_false", branchcounter);
+                    char * skipjump = generateLabel("skipjump_false", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, falsebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 return BOOL_TYPE;
                 break;
@@ -666,11 +738,29 @@ int evalExpression(ASTNode * node, char * truebranchlabel, char * falsebranchlab
                 free(skiplabel);
                 if (truebranchlabel != NULL) {
                     // true means != 0
-                    fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // fprintf(out, "\tbne $t0, $zero, %s\n", truebranchlabel);
+                    // problem: what if jump is too large?
+                    // solution: use j unconditiional jumping to allow large jumps
+                    char * bigjump = generateLabel("bigjump_true", branchcounter);
+                    char * skipjump = generateLabel("skipjump_true", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbne $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, truebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 if (falsebranchlabel != NULL) {
                     // false mean == 0
-                    fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    // fprintf(out, "\tbeq $t0, $zero, %s\n", falsebranchlabel);
+                    char * bigjump = generateLabel("bigjump_false", branchcounter);
+                    char * skipjump = generateLabel("skipjump_false", branchcounter);
+                    branchcounter++;
+                    fprintf(out, "\tbeq $t0, $zero, %s\n", bigjump);
+                    fprintf(out, "\tj %s\n", skipjump);
+                    fprintf(out, "%s:  j %s\n", bigjump, falsebranchlabel);
+                    fprintf(out, "%s:\n", skipjump);
+                    free(bigjump); free(skipjump);
                 }
                 return BOOL_TYPE;
                 break;
