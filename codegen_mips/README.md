@@ -36,6 +36,6 @@ spim -file <filename.s>
 - So even if the code generator outputs the correct assembly code, it may fail to compile the moment the assembly file is too large for spim to handle.
 ## instructor's version of spim
 - The version of spim of the instruction seems to be more newer and allows more than 16384 instructions.
-- all test cases passed with this one
-- only exception is that `gen.t18` still is not terminating
-  - this is the only test case left to be debugged.
+- all test cases pass and the program is now FULLY FUNCTIONAL!
+- try it out!
+
