@@ -2,6 +2,7 @@
 
 
 
+
 ## Visit
  - **scanner**: `ms1` folder
    - using _flex_ for lexical analyzer
@@ -20,5 +21,5 @@
        - **applyBlock**: which generates code for a Block statement
        - **evalExpression**: which generates code for an Expression. Note that it may also branch to a passed true or false label, which is necessary for applyBlock in statements such as `if`, `for` statements.
     - `TEMPLATE.s` file includes predefined code for functions that are in universe block/scope and error checking utilities functions
-      - since, all variables and function declarations in user input **GoLF** file are nested in file block/scope or after it (thus universe block is not the outermost scope), the declarations will not conflict with TEMPLATE.s as all of them contain the suffix `_file`.
+      - since, all variables and function declarations in user input **GoLF** file are nested in file block/scope or after it (thus universe block is NEVER the innermost scope), the declarations will not conflict with TEMPLATE.s as all of them contain the suffix `_file`.
       - **getProvenienceStack** may be visited in `semantic.h` and `semantic.c` to understand how unique labels are generates for all variable and function declarations.
