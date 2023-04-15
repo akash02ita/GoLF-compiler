@@ -29,6 +29,13 @@ spim -file <filename.s>
 ```
 
 # Additional notes
-The mips assembly code may not work with `spim` if there are too many instructions. For example, if you go to `max_instructions_test.s` you might notice the fact that roughly 16300 lines/instructions is the threshold for spim.
+## sudo apt install spim
+- SPIM Version 8.0 of January 8, 2010: old version and does not support larger size of instructions
+- The mips assembly code may not work with `spim` if there are too many instructions. For example, if you go to `max_instructions_test.s` you might notice the fact that roughly 16300 lines/instructions is the threshold for spim.
 
-So even if the code generator outputs the correct assembly code, it may fail to compile the moment the assembly file is too large for spim to handle.
+- So even if the code generator outputs the correct assembly code, it may fail to compile the moment the assembly file is too large for spim to handle.
+## instructor's version of spim
+- The version of spim of the instruction seems to be more newer and allows more than 16384 instructions.
+- all test cases passed with this one
+- only exception is that `gen.t18` still is not terminating
+  - this is the only test case left to be debugged.
