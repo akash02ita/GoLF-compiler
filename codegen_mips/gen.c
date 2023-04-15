@@ -90,6 +90,8 @@ void trav(ASTNode * node) {
                 fprintf(out, "\tla $a0, $noreturn1\nli $v0, 4\nsyscall\n");
                 fprintf(out, "\tla $a0, %s\nli $v0, 4\nsyscall\n", strlabel);
                 fprintf(out, "\tla $a0, $noreturn2\nli $v0, 4\nsyscall\n");
+                // do not forget to halt the program
+                writei("j halt");
             }
 
             fprintf(out, "%s:\n", retlabel);
@@ -341,6 +343,13 @@ void applyBlock(ASTNode * blocknode, char * label, char * retlabel, char * break
             forcounter++;
 
             fprintf(out, "%s:\n", pretestlabel); // pretest
+            /*
+                note: if condition is NULL (blocknode->children[0] == NULL)
+                then evalExpression will simply return without writing any code
+                so that means we should infinitely loop (until the body calls break)
+                in fact, by default spim will go the next line which is body of loop
+                ^this is exactly what we want to happen by default! no bugs here therefore.
+            */
             evalExpression(blocknode->children[0], looplabel, exitlooplabel); // write code for condition of for loop
 
             // loop of for
