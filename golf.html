@@ -1,0 +1,597 @@
+<p><!DOCTYPE html>
+<html>
+<head>
+    <title>GoLF Specification</title>
+</head>
+<body></p>
+<style>
+* {
+    font-family: sans-serif;
+}
+pre {
+    background-color: #d3d3d3;
+    padding: 1ex;
+    font-family: monospace;
+}
+code {
+    background-color: #d3d3d3;
+    font-family: monospace;
+}
+.clickme {
+    cursor: pointer;
+    background-color: yellow;
+    padding: 0.25em 0.5em 0.25em 0.5em;
+}
+</style>
+<script type="text/javascript">
+<!--
+    var flags = {};
+
+    function expose(id) {
+        if (!(id in flags)) {
+            flags[id] = false;
+        }
+        var x = document.getElementById(id);
+        flags[id] = !flags[id];
+        x.style.display = flags[id] ? "inline" : "none";
+    }
+-->
+</script>
+<h1 id="user-content-golf-specification-br-computer-science-411">GoLF Specification <br> Computer Science 411</h1>
+<p><a href="mailto:aycock@ucalgary.ca">John Aycock</a></p>
+<hr />
+<h2 id="user-content-table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#intro">Introduction</a></li>
+<li><a href="#notation">Notation</a></li>
+<li><a href="#rep">Source code representation</a></li>
+<li><a href="#lexical">Lexical elements</a></li>
+<li><a href="#const">Constants</a></li>
+<li><a href="#var">Variables</a></li>
+<li><a href="#type">Types</a></li>
+<li><a href="#block">Blocks</a></li>
+<li><a href="#decl">Declarations and scope</a></li>
+<li><a href="#expr">Expressions</a></li>
+<li><a href="#stmt">Statements</a></li>
+<li><a href="#builtin">Built-in functions</a></li>
+<li><a href="#exec">Input source file and program execution</a></li>
+<li><a href="#grammar">Appendix: Collected grammar rules</a></li>
+</ul>
+<hr />
+<p><a name="overview"></p>
+<h2 id="user-content-overview">Overview</h2>
+<p>GoLF stands for &ldquo;Go Language Fragment&rdquo; and is a subset of the
+Go programming language, with minor changes to make it more amenable
+to implementation in a one-semester course.  If you've never used Go
+previously, don't panic: it draws heavily from C and will be fairly
+familiar as a result.
+You also have access to a reference implementation of GoLF that
+you can run test inputs through to see the result.</p>
+<p>For CPSC 411, <strong>do not use the original Go specification</strong>; use
+this GoLF specification instead.</p>
+<p>This specification uses much text taken directly from
+<a href="https://go.dev/ref/spec">The Go Programming Language Specification</a>
+(10 March 2022), and substantial modifications to that text have
+also occurred.  The original specification is under a
+<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0 license</a>.
+In other words, &ldquo;Portions of this page are modifications
+based on work created and shared by Google and used according
+to terms described in the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons 4.0 Attribution
+License</a>.&rdquo;
+(The license version discrepancy is an accurate reflection of
+their information as of this writing.)</p>
+<p><a name="intro"></p>
+<h2 id="user-content-introduction">Introduction</h2>
+<p>This is the reference manual for the GoLF programming language, a
+general-purpose language that is strongly typed.  The grammar is compact
+and simple to parse, allowing for easy analysis by automatic tools such
+as integrated development environments.</p>
+<p>A few simple examples, starting with Hello, world:</p>
+<pre><code>func main() {
+    prints("Hello, world!\n")
+}</code></pre>
+<p>Fibonacci series (recursive):</p>
+<pre><code>func main() {
+    var i int
+    i = 0   // not strictly needed: see "zero value"
+
+    // Anything larger than 47 overflows a 32-bit int...
+    //
+    for i &lt;= 47 {
+        prints("fib(")
+        printi(i)
+        prints(") = ")
+        printi(fib(i))
+        prints("\n")
+        i = i + 1
+    }
+}
+
+func fib(n int) int {
+    if n == 0 { return 0 }
+    if n == 1 { return 1 }
+    return fib(n-1) + fib(n-2)
+}</code></pre>
+<p><a name="notation"></p>
+<h2 id="user-content-notation">Notation</h2>
+<p>The syntax is specified using Extended Backus-Naur Form (EBNF):</p>
+<pre><code>Production  = production_name "=" [ Expression ] "." .
+Expression  = Alternative { "|" Alternative } .
+Alternative = Term { Term } .
+Term        = production_name | token [ "…" token ] | Group | Option | Repetition .
+Group       = "(" Expression ")" .
+Option      = "[" Expression "]" .
+Repetition  = "{" Expression "}" .</code></pre>
+<p>Productions are expressions constructed from terms and the following operators, in increasing precedence:</p>
+<pre><code>|   alternation
+()  grouping
+[]  option (0 or 1 times)
+{}  repetition (0 to n times)</code></pre>
+<p>Lower-case production names are used to identify lexical tokens. Non-terminals are in CamelCase. Lexical tokens are enclosed in double quotes <code>""</code> or back quotes <code>``</code>.</p>
+<p>The form <code>a … b</code> represents the set of characters from <code>a</code> through <code>b</code> as
+alternatives. The horizontal ellipsis <code>…</code> is also used elsewhere in the
+spec to informally denote various enumerations or code snippets that
+are not further specified. The character <code>…</code> is not a token of the GoLF language.</p>
+<p><a name="rep"></p>
+<h2 id="user-content-source-code-representation">Source code representation</h2>
+<p>Source code is 7-bit ASCII text, and input characters outside that range
+may not appear in GoLF programs.
+That being said, character values in this specification will be
+given in Unicode notation for consistency with the original Go specification.
+Each input character is distinct;
+for instance, upper and lower case letters are different characters.</p>
+<p>Implementation restriction: for compatibility with other tools, a compiler
+may disallow the NUL character (U+0000) in the source text.</p>
+<h3 id="user-content-characters">Characters</h3>
+<p>The following terms are used to denote specific ASCII character classes:</p>
+<pre><code>newline        = /* the character U+000A */ .
+ascii_char     = /* an arbitrary ASCII character except newline */ .
+ascii_letter   = "A" … "Z" | "a" … "z" .
+ascii_digit    = "0" … "9" .</code></pre>
+<h3 id="user-content-letters-and-digits">Letters and digits</h3>
+<p>The underscore character <code>_</code> (U+005F) is considered a letter.</p>
+<pre><code>letter        = ascii_letter | "_" .
+decimal_digit = "0" … "9" .</code></pre>
+<p><a name="lexical"></p>
+<h2 id="user-content-lexical-elements">Lexical elements</h2>
+<h3 id="user-content-comments">Comments</h3>
+<p>Comments serve as program documentation. GoLF has one form of comment,
+line comments that start with the character sequence <code>//</code> and stop at the
+end of the line.
+A line comment acts like a newline.</p>
+<p>A comment cannot start inside a string literal, or inside a comment.</p>
+<h3 id="user-content-tokens">Tokens</h3>
+<p>Tokens form the vocabulary of the GoLF language. There are four classes:
+<em>identifiers</em>, <em>keywords</em>, <em>operators and punctuation</em>, and <em>literals</em>. White
+space, formed from spaces (U+0020), horizontal tabs (U+0009), carriage
+returns (U+000D), and newlines (U+000A), is ignored except as it
+separates tokens that would otherwise combine into a single token. Also,
+a newline or end of file may trigger the insertion of a semicolon. While
+breaking the input into tokens, the next token is the longest sequence
+of characters that form a valid token.</p>
+<h3 id="user-content-semicolons">Semicolons</h3>
+<p>The formal grammar uses semicolons <code>";"</code> as terminators in a number of
+productions. GoLF programs may omit most of these semicolons using the
+following two rules.</p>
+<ol>
+<li>When the input is broken into tokens, a semicolon is automatically inserted into the token stream immediately after a line's final token if that token is<ul>
+<li>an identifier</li>
+<li>an integer or string literal</li>
+<li>one of the keywords <code>break</code> or <code>return</code></li>
+<li>one of the punctuation symbols <code>)</code> or <code>}</code></li></ul></li>
+<li>To allow complex statements to occupy a single line, a semicolon may be omitted before a closing "}".</li>
+</ol>
+<p>To reflect idiomatic use, code examples in this document elide semicolons
+using these rules. Also note that either a newline <em>or</em> end of file may
+follow a
+line's final token.</p>
+<p><em>Fun fact: the full Go compiler sets the semicolon token's lexeme to
+";" if the semicolon was actually in the input, and "\n" if the
+semicolon was inserted by the compiler.</em></p>
+<h3 id="user-content-identifiers">Identifiers</h3>
+<p>Identifiers name program entities such as variables. An identifier is
+a sequence of one or more letters and digits. The first character in an
+identifier must be a letter.</p>
+<pre><code>identifier = letter { letter | ascii_digit } .</code></pre>
+<p>Examples:</p>
+<pre><code>_
+a
+_x9</code></pre>
+<p>Some identifiers are predeclared.</p>
+<h3 id="user-content-keywords">Keywords</h3>
+<p>The following keywords are reserved and may not be used as identifiers.</p>
+<pre><code>break
+else
+for
+func
+if
+return
+var</code></pre>
+<h3 id="user-content-operators-and-punctuation">Operators and punctuation</h3>
+<p>The following character sequences represent operators (including assignment operators) and punctuation:</p>
+<pre><code> +    &amp;&amp;    ==    !=    (    )
+ -    ||    &lt;     &lt;=    {    }
+ *          &gt;     &gt;=    ,    ;
+ /          =
+ %          !</code></pre>
+<h3 id="user-content-integer-literals">Integer literals</h3>
+<p>An integer literal is a sequence of digits representing an integer constant.</p>
+<pre><code>int_lit        = decimal_lit .
+decimal_lit    = decimal_digits .
+decimal_digits = decimal_digit { decimal_digit } .</code></pre>
+<p>For example:</p>
+<pre><code>42
+0600        // this would be interpreted as the base 10 number 600, unlike Go
+170141183460469231731687303715884105727
+
+_42         // an identifier, not an integer literal</code></pre>
+<h3 id="user-content-string-literals">String literals</h3>
+<p>A string literal represents a string constant obtained from concatenating
+a sequence of characters. There is one form of these in GoLF:
+interpreted string literals.</p>
+<p>Interpreted string literals are character sequences between double quotes,
+as in <code>"bar"</code>. Within the quotes, any character may appear except newline
+and an unescaped double quote. The text between the quotes forms the value
+of the literal, with backslash escapes interpreted as follows:</p>
+<pre><code>\b   U+0008 backspace
+\f   U+000C form feed
+\n   U+000A line feed or newline
+\r   U+000D carriage return
+\t   U+0009 horizontal tab
+\\   U+005C backslash
+\"   U+0022 double quote</code></pre>
+<p>All other sequences starting with a backslash are illegal.</p>
+<pre><code>string_lit             = interpreted_string_lit .
+interpreted_string_lit = `"` { ascii_value } `"` .
+
+ascii_value    = ascii_char | escaped_char .
+escaped_char   = `\` ( "b" | "f" | "n" | "r" | "t" | `\` | `"` ) .</code></pre>
+<p><a name="const"></p>
+<h2 id="user-content-constants">Constants</h2>
+<p>There are <em>boolean constants</em>, <em>integer constants</em>, and <em>string constants</em>.
+A constant value is represented by an integer or string literal, or
+an identifier denoting a constant.
+The boolean truth values are represented by the predeclared constants <code>true</code>
+and <code>false</code>.</p>
+<p>Implementation restriction: Although numeric constants have arbitrary precision in the language, a compiler may implement them using an internal representation with limited precision (although no less precision than the <code>int</code> type). That said, every implementation must give an error if unable to represent an integer constant precisely.</p>
+<p><a name="var"></p>
+<h2 id="user-content-variables">Variables</h2>
+<p>A variable is a storage location for holding a value. The set of permissible values is determined by the variable's <em>type</em>.
+A variable declaration reserves storage for a named variable;
+for function parameters, the signature of a function declaration reserves storage for those parameters as named variables.</p>
+<p>The type of a variable is the type given in its declaration.</p>
+<p>A variable's value is retrieved by referring to the variable in an expression; it is the most recent value assigned to the variable. If a variable has not yet been assigned a value, its value is the zero value for its type: <code>false</code>
+for booleans, <code>0</code> for numeric types, <code>""</code> for strings.</p>
+<p><a name="type"></p>
+<h2 id="user-content-types">Types</h2>
+<p>A type determines a set of values together with operations and methods specific to those values. A type is denoted by a type name.</p>
+<p>The language predeclares certain type names.</p>
+<pre><code>Type      = TypeName .
+TypeName  = identifier .</code></pre>
+<h3 id="user-content-boolean-types">Boolean types</h3>
+<p>A boolean type represents the set of Boolean truth values denoted by the predeclared constants <code>true</code> and <code>false</code>. The predeclared boolean type is <code>bool</code>.</p>
+<h3 id="user-content-numeric-types">Numeric types</h3>
+<p>An <em>integer</em> type represents the set of integer values.  It is the only
+numeric type present in GoLF.</p>
+<p>There is a predeclared integer type:</p>
+<pre><code>int    the set of all signed integers</code></pre>
+<p>In GoLF, integers are 32 bits in size (-2147483648 to 2147483647)
+and are represented using two's complement arithmetic.</p>
+<h3 id="user-content-string-types">String types</h3>
+<p>A string type represents the set of string values. A string value is a (possibly empty) sequence of bytes. Strings are immutable: once created, it is impossible to change the contents of a string, although a string variable may have a different (immutable) string assigned to it. The predeclared string type is <code>string</code>.</p>
+<p><a name="block"></p>
+<h2 id="user-content-blocks">Blocks</h2>
+<p>A <em>block</em> is a possibly empty sequence of declarations and statements within matching brace brackets.</p>
+<pre><code>Block = "{" StatementList "}" .
+StatementList = { Statement ";" } .</code></pre>
+<p>In addition to explicit blocks in the source code, there are implicit blocks:</p>
+<ol>
+<li>The <em>universe block</em> encompasses all GoLF source text.</li>
+<li>The source input file has a file block containing all GoLF source text in that file.</li>
+</ol>
+<p>Blocks nest and influence scoping.</p>
+<p><a name="decl"></p>
+<h2 id="user-content-declarations-and-scope">Declarations and scope</h2>
+<p>A <em>declaration</em> binds a non-blank identifier to a variable or function.
+Every identifier in a program must be declared. No identifier may be declared twice in the same block.</p>
+<pre><code>Declaration   = VarDecl .
+TopLevelDecl  = Declaration | FunctionDecl .</code></pre>
+<p>The <em>scope</em> of a declared identifier is the extent of source text in which the identifier denotes the specified constant, type, variable, or function.</p>
+<p>GoLF is lexically scoped using blocks:</p>
+<ol>
+<li>The scope of a predeclared identifier is the universe block.</li>
+<li>The scope of an identifier denoting a variable or function declared at top level (outside any function) is the file block.</li>
+<li>The scope of an identifier denoting a function parameter is the function body.</li>
+<li>The scope of a variable identifier declared inside a function begins at the end of the VarSpec and ends at the end of the innermost containing block.</li>
+</ol>
+<p>An identifier declared in a block may be redeclared in an inner block. While the identifier of the inner declaration is in scope, it denotes the entity declared by the inner declaration.</p>
+<h3 id="user-content-predeclared-identifiers">Predeclared identifiers</h3>
+<p>The following identifiers are implicitly declared in the universe block:</p>
+<pre><code>Types:
+    bool int string
+
+Constants:
+    true false
+
+Functions:
+    getchar halt len printb printc printi prints</code></pre>
+<h3 id="user-content-variable-declarations">Variable declarations</h3>
+<p>A variable declaration creates a variable, binds an
+identifier to it, and gives it a type and an initial (zero) value.</p>
+<pre><code>VarDecl     = "var" VarSpec .
+VarSpec     = identifier Type .</code></pre>
+<p>Each variable is initialized to its zero value.</p>
+<h3 id="user-content-function-declarations">Function declarations</h3>
+<p>A function declaration binds an identifier, the <em>function name</em>, to a function.</p>
+<pre><code>FunctionDecl = "func" FunctionName Signature FunctionBody .
+FunctionName = identifier .
+FunctionBody = Block .
+
+Signature      = Parameters [ Result ] .
+Result         = Type .
+Parameters     = "(" [ ParameterList [ "," ] ] ")" .
+ParameterList  = ParameterDecl { "," ParameterDecl } .
+ParameterDecl  = identifier Type .</code></pre>
+<p>If the function's signature declares a result parameter, the last statement <em>executed</em> in the function body must be a <code>return</code> statement.
+It is a compile-time error for a function with a result parameter to have
+no <code>return</code> statements in the function body.</p>
+<p>Functions may be recursive.</p>
+<p><a name="expr"></p>
+<h2 id="user-content-expressions">Expressions</h2>
+<p>An expression specifies the computation of a value by applying operators and functions to operands.</p>
+<h3 id="user-content-operands">Operands</h3>
+<p>Operands denote the elementary values in an expression. An operand may be a literal, an identifier denoting a constant, variable, or function, or a parenthesized expression.</p>
+<pre><code>Operand     = Literal | OperandName | "(" Expression ")" .
+Literal     = BasicLit .
+BasicLit    = int_lit | string_lit .
+OperandName = identifier .</code></pre>
+<h3 id="user-content-primary-expressions">Primary expressions</h3>
+<p>Primary expressions are the operands for unary and binary expressions.</p>
+<pre><code>PrimaryExpr = Operand | PrimaryExpr Arguments .
+
+Arguments      = "(" [ ExpressionList [ "," ] ] ")" .
+ExpressionList = Expression { "," Expression } .</code></pre>
+<p>Examples:</p>
+<pre><code>x
+2
+f(314159, true)
+foo()</code></pre>
+<h3 id="user-content-calls">Calls</h3>
+<p>Given an expression f with function type,</p>
+<pre><code>f(a1, a2, … an)</code></pre>
+<p>calls f with arguments <code>a1</code>, <code>a2</code>, … <code>an</code>.
+Each argument must be an expression whose type matches the type
+of the corresponding parameter of <code>f</code>.
+All arguments are evaluated before the function is called. The type of
+the expression is the result type of <code>f</code>.</p>
+<p>In a function call, the function value and arguments are evaluated in the usual lexical left-to-right order. After they are evaluated, the parameters of the call are passed by value to the function and the called function begins execution. The return parameters of the function are passed by value back to the caller when the function returns.</p>
+<h3 id="user-content-operators">Operators</h3>
+<p>Operators combine operands into expressions.</p>
+<pre><code>Expression = UnaryExpr | Expression binary_op Expression .
+UnaryExpr  = PrimaryExpr | unary_op UnaryExpr .
+
+binary_op  = "||" | "&amp;&amp;" | rel_op | add_op | mul_op .
+rel_op     = "==" | "!=" | "&lt;" | "&lt;=" | "&gt;" | "&gt;=" .
+add_op     = "+" | "-" .
+mul_op     = "*" | "/" | "%" .
+
+unary_op   = "-" | "!" .</code></pre>
+<p>Comparisons are discussed elsewhere. For binary operators, the operand types must be identical.</p>
+<h4 id="user-content-operator-precedence">Operator precedence</h4>
+<p>Unary operators have the highest precedence.
+There are five precedence levels for binary operators. Multiplication operators bind strongest, followed by addition operators, comparison operators, <code>&amp;&amp;</code> (logical AND), and finally <code>||</code> (logical OR):</p>
+<pre><code>Precedence    Operator
+    5             *  /  % 
+    4             +  -
+    3             ==  !=  &lt;  &lt;=  &gt;  &gt;=
+    2             &amp;&amp;
+    1             ||</code></pre>
+<p>Binary operators of the same precedence associate from left to right. For instance, <code>x / y * z</code> is the same as <code>(x / y) * z</code>.</p>
+<h3 id="user-content-arithmetic-operators">Arithmetic operators</h3>
+<p>Arithmetic operators apply to numeric values and yield a result of the same type as the first operand. The arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>) apply to integer types only.</p>
+<h4 id="user-content-integer-operators">Integer operators</h4>
+<p>For two integer values <code>x</code> and <code>y</code>, the integer quotient <code>q = x / y</code> and remainder <code>r = x % y</code> satisfy the following relationships:</p>
+<pre><code>x = q*y + r  and  |r| &lt; |y|</code></pre>
+<p>with x / y truncated towards zero ("truncated division").</p>
+<pre><code> x     y     x / y     x % y
+ 5     3       1         2
+-5     3      -1        -2
+ 5    -3      -1         2
+-5    -3       1        -2</code></pre>
+<p>The one exception to this rule is that if the dividend <code>x</code> is the most negative value for the int type of <code>x</code>, the quotient <code>q = x / -1</code> is equal to <code>x</code> (and <code>r = 0</code>) due to two's-complement integer overflow.</p>
+<p>If the divisor is zero at run time, a run-time error occurs.</p>
+<h4 id="user-content-integer-overflow">Integer overflow</h4>
+<p>For signed integers, the operations <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, may legally overflow and the resulting value exists and is deterministically defined by the signed integer representation, the operation, and its operands. Overflow does not cause a run-time error. A compiler may not optimize code under the assumption that overflow does not occur. For instance, it may not assume that <code>x &lt; x + 1</code> is always true.</p>
+<h3 id="user-content-comparison-operators">Comparison operators</h3>
+<p>Comparison operators compare two operands and yield a boolean value.</p>
+<pre><code>==    equal
+!=    not equal
+&lt;     less
+&lt;=    less or equal
+&gt;     greater
+&gt;=    greater or equal</code></pre>
+<p>The equality operators <code>==</code> and <code>!=</code> apply to operands that are
+<em>comparable</em>. The ordering operators <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, and <code>&gt;=</code> apply to operands
+that are <em>ordered</em>. These terms and the result of the comparisons are
+defined as follows:</p>
+<ul>
+<li>Boolean values are comparable. Two boolean values are equal if they are either both <code>true</code> or both <code>false</code>.</li>
+<li>Integer values are comparable and ordered, in the usual way.</li>
+<li>String values are comparable and ordered, lexically byte-wise.</li>
+</ul>
+<h3 id="user-content-logical-operators">Logical operators</h3>
+<p>Logical operators apply to boolean values and yield a result of the same type as the operands. The right operand is evaluated conditionally, i.e., they are short-circuiting.</p>
+<pre><code>&amp;&amp;    conditional AND    p &amp;&amp; q  is  "if p then q else false"
+||    conditional OR     p || q  is  "if p then true else q"
+!     NOT                !p      is  "not p"</code></pre>
+<p><a name="stmt"></p>
+<h2 id="user-content-statements">Statements</h2>
+<p>Statements control execution.</p>
+<pre><code>Statement =
+    Declaration | SimpleStmt |
+    ReturnStmt | BreakStmt | 
+    Block | IfStmt | ForStmt .
+
+SimpleStmt = EmptyStmt | ExpressionStmt | Assignment .</code></pre>
+<h3 id="user-content-empty-statements">Empty statements</h3>
+<p>The empty statement does nothing.</p>
+<pre><code>EmptyStmt = .</code></pre>
+<h3 id="user-content-expression-statements">Expression statements</h3>
+<p>Function calls can appear in statement context. Such statements may be parenthesized.</p>
+<pre><code>ExpressionStmt = Expression .</code></pre>
+<h3 id="user-content-assignments">Assignments</h3>
+<pre><code>Assignment = Expression assign_op Expression .
+
+assign_op = "=" .</code></pre>
+<p>The left-hand side operand must be the name of a variable; other types of names, like those of functions and constants, may not be assigned to. Operands may be parenthesized.
+The type of the value on the right-hand side must be identical to the variable's type on the left-hand side.</p>
+<h3 id="user-content-if-statements">If statements</h3>
+<p>"If" statements specify the conditional execution of two branches
+according to the value of a boolean expression. If the expression
+evaluates to true, the "if" branch is executed, otherwise, if present,
+the "else" branch is executed.</p>
+<pre><code>IfStmt = "if" Expression Block [ "else" ( IfStmt | Block ) ] .</code></pre>
+<p>The type of an <code>if</code> expression must be boolean.</p>
+<h3 id="user-content-for-statements">For statements</h3>
+<p>A "for" statement specifies repeated execution of a block. There are two forms: with and without a condition.</p>
+<pre><code>ForStmt = "for" [ Condition ] Block .
+Condition = Expression .</code></pre>
+<h4 id="user-content-for-statements-with-a-single-condition">For statements with a single condition</h4>
+<p>In its simplest form, a "for" statement specifies the repeated execution of a block as long as a boolean condition evaluates to true. The condition is evaluated before each iteration.</p>
+<pre><code>for a &lt; b {
+        a = a * 2
+}</code></pre>
+<p>The type of a <code>for</code> condition must be boolean.</p>
+<h4 id="user-content-for-statements-with-no-condition">For statements with no condition</h4>
+<p>If the condition is absent, it is equivalent to the boolean value <code>true</code>.</p>
+<h3 id="user-content-return-statements">Return statements</h3>
+<p>A "return" statement in a function F terminates the execution of F, and optionally provides a result value.</p>
+<pre><code>ReturnStmt = "return" [ Expression ] .</code></pre>
+<p>In a function without a result type, a "return" statement must not specify a result value.</p>
+<pre><code>func noResult() {
+    return
+}</code></pre>
+<p>For a function with a result type, the type of the return expression must be the same as the function's result type.</p>
+<h3 id="user-content-break-statements">Break statements</h3>
+<p>A "break" statement terminates execution of the innermost "for" statement within the same function.</p>
+<pre><code>BreakStmt = "break" .</code></pre>
+<p>It is an error for a <code>break</code> to occur without an enclosing <code>for</code> loop.</p>
+<p><a name="builtin"></p>
+<h2 id="user-content-built-in-functions">Built-in functions</h2>
+<p>Built-in functions are predeclared. They are called like any other function.</p>
+<p>Although a GoLF user never sees declarations for these routines, some are shown in the table below to illustrate how they should be called:</p>
+<pre><code>Name      Signature                Description
+
+getchar   func getchar() int       Returns an ASCII input character as an integer, or -1 if end of file has been reached.
+halt      func halt()              Halts execution of the program.
+len       func len(s string) int   Returns the string length in bytes.
+printb    func printb(b bool)      Prints a boolean as “true” or “false”.
+printc    func printc(c int)       Prints an integer as an ASCII character. The output of values outside the range of 7-bit ASCII is undefined.
+printi    func printi(i int)       Prints an integer.
+prints    func prints(s string)    Prints a string.</code></pre>
+<p>None of the printing functions automatically output a newline.</p>
+<p><a name="exec"></p>
+<h2 id="user-content-input-source-file-and-program-execution">Input source file and program execution</h2>
+<p>A GoLF program consists of a single file declaring variables and functions belonging to the program.</p>
+<pre><code>SourceFile       = { TopLevelDecl ";" } .</code></pre>
+<p>A complete program declares
+a function <code>main</code> that takes no arguments and returns no value.
+It is an error for <code>main</code> to be absent from an input source file.</p>
+<pre><code>func main() { … }</code></pre>
+<p>Program execution begins by invoking the function <code>main</code>. When that function invocation returns, the program exits.</p>
+<p><a name="grammar"></p>
+<h2 id="user-content-appendix-collected-grammar-rules">Appendix: Collected grammar rules</h2>
+<p>Lexical tokens:</p>
+<pre><code>newline        = /* the character U+000A */ .
+ascii_char     = /* an arbitrary ASCII character except newline */ .
+ascii_letter   = "A" … "Z" | "a" … "z" .
+ascii_digit    = "0" … "9" .
+
+letter        = ascii_letter | "_" .
+decimal_digit = "0" … "9" .
+
+identifier = letter { letter | ascii_digit } .
+
+int_lit        = decimal_lit .
+decimal_lit    = decimal_digits .
+decimal_digits = decimal_digit { decimal_digit } .
+
+string_lit             = interpreted_string_lit .
+interpreted_string_lit = `"` { ascii_value } `"` .
+
+ascii_value    = ascii_char | escaped_char .
+escaped_char   = `\` ( "b" | "f" | "n" | "r" | "t" | `\` | `"` ) .
+
+assign_op = "=" .
+
+binary_op  = "||" | "&amp;&amp;" | rel_op | add_op | mul_op .
+rel_op     = "==" | "!=" | "&lt;" | "&lt;=" | "&gt;" | "&gt;=" .
+add_op     = "+" | "-" .
+mul_op     = "*" | "/" | "%" .
+unary_op   = "-" | "!" .</code></pre>
+<p>Syntax rules (SourceFile is the start symbol):</p>
+<pre><code>Type      = TypeName .
+TypeName  = identifier .
+
+Block = "{" StatementList "}" .
+
+StatementList = { Statement ";" } .
+Declaration   = VarDecl .
+TopLevelDecl  = Declaration | FunctionDecl .
+
+VarDecl     = "var" VarSpec .
+VarSpec     = identifier Type .
+
+FunctionDecl = "func" FunctionName Signature FunctionBody .
+FunctionName = identifier .
+FunctionBody = Block .
+
+Signature      = Parameters [ Result ] .
+Result         = Type .
+Parameters     = "(" [ ParameterList [ "," ] ] ")" .
+ParameterList  = ParameterDecl { "," ParameterDecl } .
+ParameterDecl  = identifier Type .
+
+Operand     = Literal | OperandName | "(" Expression ")" .
+Literal     = BasicLit .
+BasicLit    = int_lit | string_lit .
+OperandName = identifier .
+PrimaryExpr = Operand | PrimaryExpr Arguments .
+
+Arguments      = "(" [ ExpressionList [ "," ] ] ")" .
+ExpressionList = Expression { "," Expression } .
+
+Expression = UnaryExpr | Expression binary_op Expression .
+UnaryExpr  = PrimaryExpr | unary_op UnaryExpr .
+
+Statement =
+    Declaration | SimpleStmt |
+    ReturnStmt | BreakStmt | 
+    Block | IfStmt | ForStmt .
+
+SimpleStmt = EmptyStmt | ExpressionStmt | Assignment .
+
+EmptyStmt = .
+
+ExpressionStmt = Expression .
+
+Assignment = Expression assign_op Expression .
+
+IfStmt = "if" Expression Block [ "else" ( IfStmt | Block ) ] .
+
+ForStmt = "for" [ Condition ] Block .
+
+Condition = Expression .
+
+ReturnStmt = "return" [ Expression ] .
+
+BreakStmt = "break" .
+
+SourceFile       = { TopLevelDecl ";" } .</code></pre>
+<hr>
+<address>
+John Aycock, 15 March 2023
+</address>
+<p></body>
+</html></p>
